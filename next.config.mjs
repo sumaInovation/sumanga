@@ -1,7 +1,18 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove reactCompiler for now to ensure build stability
+images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**', // Wildcard for any domain
+      },
+      {
+        protocol: 'http',
+        hostname: '**', // Include HTTP if needed
+      },
+    ],
+  },
 };
 
 export default nextConfig;

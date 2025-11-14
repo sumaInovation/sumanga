@@ -1,88 +1,109 @@
 
-// app/api/products/[id]/route.js
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
 
-// GET - Fetch single product by ID
-export async function GET(request, { params }) {
-  try {
-    const { id } = params;
-    console.log(`🟢 GET /api/products/${id} - Fetching single product`);
-    
-    await connectDB();
-
-    const product = await Product.findById(id);
-    
-    if (!product) {
-      return Response.json({ error: 'Product not found' }, { status: 404 });
-    }
-
-    console.log(`✅ Found product: ${product.name}`);
-    return Response.json({
-      success: true,
-      product
-    });
-
-  } catch (error) {
-    console.error(`❌ GET /api/products/${params.id} error:`, error);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// PUT - Update product
 export async function PUT(request, { params }) {
+  console.log('🟢 PUT /api/products/[id] - Starting request...');
+  
   try {
-    const { id } = params;
-    console.log(`🟢 PUT /api/products/${id} - Updating product`);
+    // ✅ FIX: Await the params promise
+    const { id } = await params;
+    
+    console.log('📦 Updating product ID:', id);
     
     await connectDB();
+    
     const updateData = await request.json();
+    console.log('📦 Update data received:', updateData);
 
-    const product = await Product.findByIdAndUpdate(
+    // Find and update the product
+    const updatedProduct = await Product.findByIdAndUpdate(
       id,
       updateData,
       { new: true, runValidators: true }
     );
 
-    if (!product) {
-      return Response.json({ error: 'Product not found' }, { status: 404 });
+    if (!updatedProduct) {
+      console.log('❌ Product not found:', id);
+      return Response.json({ 
+        success: false,
+        error: 'Product not found' 
+      }, { status: 404 });
     }
 
-    console.log(`✅ Updated product: ${product.name}`);
+    console.log('✅ Product updated successfully:', updatedProduct._id);
+    
     return Response.json({
       success: true,
       message: 'Product updated successfully',
+      product: updatedProduct
+    });
+
+  } catch (error) {
+    console.error('❌ PUT /api/products/[id] ERROR:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message
+    }, { status: 500 });
+  }
+}
+
+export async function GET(request, { params }) {
+  try {
+    // ✅ FIX: Await the params promise
+    const { id } = await params;
+    
+    await connectDB();
+    
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return Response.json({ 
+        success: false,
+        error: 'Product not found' 
+      }, { status: 404 });
+    }
+
+    return Response.json({
+      success: true,
       product
     });
 
   } catch (error) {
-    console.error(`❌ PUT /api/products/${params.id} error:`, error);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ GET /api/products/[id] ERROR:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message
+    }, { status: 500 });
   }
 }
 
-// DELETE - Delete product
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
-    console.log(`🟢 DELETE /api/products/${id} - Deleting product`);
+    // ✅ FIX: Await the params promise
+    const { id } = await params;
     
     await connectDB();
+    
+    const deletedProduct = await Product.findByIdAndDelete(id);
 
-    const product = await Product.findByIdAndDelete(id);
-
-    if (!product) {
-      return Response.json({ error: 'Product not found' }, { status: 404 });
+    if (!deletedProduct) {
+      return Response.json({ 
+        success: false,
+        error: 'Product not found' 
+      }, { status: 404 });
     }
 
-    console.log(`✅ Deleted product: ${product.name}`);
     return Response.json({
       success: true,
       message: 'Product deleted successfully'
     });
 
   } catch (error) {
-    console.error(`❌ DELETE /api/products/${params.id} error:`, error);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ DELETE /api/products/[id] ERROR:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message
+    }, { status: 500 });
   }
 }

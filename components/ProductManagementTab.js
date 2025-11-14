@@ -155,95 +155,101 @@ export default function ProductManagementTab() {
     setImageUrls(newImageUrls);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      // Process image URLs into the images array format
-      const processedImages = imageUrls
-        .filter(url => url.trim() !== '')
-        .map(url => ({
-          url: url.trim(),
-          alt: formData.name,
-          isPrimary: false
-        }));
+  try {
+    // Process image URLs into the images array format
+    const processedImages = imageUrls
+      .filter(url => url.trim() !== '')
+      .map(url => ({
+        url: url.trim(),
+        alt: formData.name,
+        isPrimary: false
+      }));
 
-      // Set first image as primary if exists
-      if (processedImages.length > 0) {
-        processedImages[0].isPrimary = true;
-      }
-
-      const submitData = {
-        ...formData,
-        // Convert string numbers to actual numbers
-        price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-        discount: formData.discount ? parseFloat(formData.discount) : 0,
-        stock: parseInt(formData.stock),
-        lowStockAlert: parseInt(formData.lowStockAlert),
-        
-        // Images data
-        images: processedImages,
-        thumbnail: thumbnailUrl || (processedImages.length > 0 ? processedImages[0].url : ''),
-        
-        // Convert weight and dimensions
-        weight: {
-          ...formData.weight,
-          value: formData.weight.value ? parseFloat(formData.weight.value) : undefined
-        },
-        dimensions: {
-          ...formData.dimensions,
-          length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : undefined,
-          width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : undefined,
-          height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : undefined
-        },
-        
-        // Convert shipping cost
-        shipping: {
-          ...formData.shipping,
-          cost: formData.shipping.cost ? parseFloat(formData.shipping.cost) : 0
-        },
-        
-        // Ensure arrays are properly formatted
-        keywords: Array.isArray(formData.keywords) ? formData.keywords : [],
-        features: Array.isArray(formData.features) ? formData.features : [],
-        tags: Array.isArray(formData.tags) ? formData.tags : [],
-        specifications: formData.specifications || {}
-      };
-
-      const url = editingProduct 
-        ? `/api/products/${editingProduct._id}`
-        : '/api/products';
-      
-      const method = editingProduct ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submitData)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
-      }
-
-      if (data.success) {
-        await fetchProducts();
-        resetForm();
-        setShowAddForm(false);
-        setEditingProduct(null);
-        alert(editingProduct ? 'Product updated successfully!' : 'Product created successfully!');
-      }
-    } catch (error) {
-      console.error('Error saving product:', error);
-      alert(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
+    // Set first image as primary if exists
+    if (processedImages.length > 0) {
+      processedImages[0].isPrimary = true;
     }
-  };
+
+    const submitData = {
+      ...formData,
+      // ✅ ADD THIS: Include the createdBy field (use the same ID as your Arduino product)
+      createdBy: "6916ba84f8d28cd7a989ef1a", // Use the same ID from your existing product
+      
+      // Convert string numbers to actual numbers
+      price: parseFloat(formData.price),
+      originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
+      discount: formData.discount ? parseFloat(formData.discount) : 0,
+      stock: parseInt(formData.stock),
+      lowStockAlert: parseInt(formData.lowStockAlert),
+      
+      // Images data
+      images: processedImages,
+      thumbnail: thumbnailUrl || (processedImages.length > 0 ? processedImages[0].url : ''),
+      
+      // Convert weight and dimensions
+      weight: {
+        ...formData.weight,
+        value: formData.weight.value ? parseFloat(formData.weight.value) : undefined
+      },
+      dimensions: {
+        ...formData.dimensions,
+        length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : undefined,
+        width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : undefined,
+        height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : undefined
+      },
+      
+      // Convert shipping cost
+      shipping: {
+        ...formData.shipping,
+        cost: formData.shipping.cost ? parseFloat(formData.shipping.cost) : 0
+      },
+      
+      // Ensure arrays are properly formatted
+      keywords: Array.isArray(formData.keywords) ? formData.keywords : [],
+      features: Array.isArray(formData.features) ? formData.features : [],
+      tags: Array.isArray(formData.tags) ? formData.tags : [],
+      specifications: formData.specifications || {}
+    };
+
+    const url = editingProduct 
+      ? `/api/products/${editingProduct._id}`
+      : '/api/products';
+    
+    const method = editingProduct ? 'PUT' : 'POST';
+
+    console.log('🟢 Sending request to:', url);
+    console.log('🟢 Submit data:', submitData);
+
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(submitData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Something went wrong');
+    }
+
+    if (data.success) {
+      await fetchProducts();
+      resetForm();
+      setShowAddForm(false);
+      setEditingProduct(null);
+      alert(editingProduct ? 'Product updated successfully!' : 'Product created successfully!');
+    }
+  } catch (error) {
+    console.error('Error saving product:', error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const resetForm = () => {
     setFormData({
