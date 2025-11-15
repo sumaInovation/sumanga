@@ -1,122 +1,99 @@
+
 import Link from 'next/link';
-import Image from 'next/image';
+import { Suspense } from 'react';
+import ProductsClient from './ProductsClient';
+import ProductsSkeleton from './ProductsSkeleton';
 
-async function getProducts() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
-      cache: 'no-store'
-    });
-    
-    if (!res.ok) return { products: [] };
-    
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return { products: [] };
+// Server component that fetches data
+async function ProductsGrid() {
+  async function getProducts() {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
+        cache: 'no-store',
+        next: { tags: ['products'] }
+      });
+      
+      if (!res.ok) {
+        console.error('Failed to fetch products:', res.status);
+        return { products: [] };
+      }
+      
+      const data = await res.json();
+      console.log('Fetched products:', data.products?.length || 0);
+      
+      // Ensure products have safe default values
+      const safeProducts = data.products?.map(product => ({
+        ...product,
+        rating: typeof product.rating === 'number' ? product.rating : 0,
+        reviewCount: product.reviewCount || 0,
+        price: typeof product.price === 'number' ? product.price : 0,
+        originalPrice: typeof product.originalPrice === 'number' ? product.originalPrice : undefined,
+        stock: typeof product.stock === 'number' ? product.stock : 0,
+        isInStock: product.isInStock ?? true,
+        isOnSale: product.isOnSale ?? false,
+        isFeatured: product.isFeatured ?? false,
+        status: product.status || 'draft',
+        categories: product.categories || product.category 
+          ? [product.category || 'general'].filter(Boolean)
+          : ['general'],
+        createdAt: product.createdAt || new Date().toISOString()
+      })) || [];
+      
+      return { products: safeProducts };
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return { products: [] };
+    }
   }
-}
 
-export default async function ProductsPage() {
   const { products } = await getProducts();
   const publishedProducts = products.filter(p => p.status === 'published');
+  
+  console.log('Published products:', publishedProducts.length);
 
+  // Pass the data to the client component
+  return <ProductsClient initialProducts={publishedProducts} />;
+}
+
+// Main page component
+export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">All Products</h1>
-          <p className="mt-2 text-gray-600">
-            {publishedProducts.length} products available
-          </p>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">Our Products</h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Discover our carefully curated collection of premium products
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {publishedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {publishedProducts.map((product) => (
-              <div key={product._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                <Link href={`/products/${product.slug}`}>
-                  <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200">
-                    <Image
-                      src={product.thumbnail || product.images?.[0]?.url || '/placeholder-product.jpg'}
-                      alt={product.name}
-                      width={300}
-                      height={300}
-                      className="h-48 w-full object-cover object-center hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{product.name}</h3>
-                    <p className="mt-1 text-sm text-gray-500">{product.brand}</p>
-                    
-                    {/* Status badges */}
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {!product.isInStock && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Out of Stock
-                        </span>
-                      )}
-                      {product.isOnSale && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          On Sale
-                        </span>
-                      )}
-                      {product.isFeatured && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Featured
-                        </span>
-                      )}
-                    </div>
+      {/* Products with Suspense */}
+      <Suspense fallback={<ProductsSkeleton />}>
+        <ProductsGrid />
+      </Suspense>
 
-                    {/* Pricing */}
-                    <div className="mt-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {product.currency} {product.price.toFixed(2)}
-                        </p>
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <p className="text-sm text-gray-500 line-through">
-                            {product.currency} {product.originalPrice.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                      
-                      {/* Discount badge */}
-                      {product.originalPrice && product.originalPrice > product.price && (
-                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                          Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Stock info */}
-                    <div className="mt-2">
-                      <p className={`text-xs font-medium ${
-                        product.stock > 10 ? 'text-green-600' : 
-                        product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
-                        {product.stock > 0 
-                          ? `${product.stock} in stock` 
-                          : 'Out of stock'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
+      {/* Newsletter Section */}
+      <div className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-xl font-bold mb-3">Stay Updated</h2>
+          <p className="text-gray-300 mb-6 text-sm">
+            Be the first to know about new products and exclusive deals
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+            <input 
+              type="email" 
+              placeholder="Enter your email"
+              className="flex-1 px-4 py-2 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+            <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm">
+              Subscribe
+            </button>
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">📦</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Products Found</h2>
-            <p className="text-gray-600">Check back later for new products!</p>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

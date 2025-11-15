@@ -1,4 +1,4 @@
-// models/Product.js
+
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
@@ -12,7 +12,7 @@ const productSchema = new mongoose.Schema({
   slug: {
     type: String,
     required: [true, "Slug is required"],
-    unique: true,
+    unique: true, // This automatically creates a unique index
     trim: true,
     lowercase: true
   },
@@ -86,7 +86,7 @@ const productSchema = new mongoose.Schema({
   sku: {
     type: String,
     required: [true, "SKU is required"],
-    unique: true,
+    unique: true, // This automatically creates a unique index
     trim: true,
     uppercase: true
   },
@@ -232,8 +232,8 @@ const productSchema = new mongoose.Schema({
 });
 
 // Indexes for better performance
+// REMOVED: productSchema.index({ slug: 1 }); // Duplicate of unique: true on slug field
 productSchema.index({ name: 'text', description: 'text', brand: 'text', category: 'text' });
-productSchema.index({ slug: 1 });
 productSchema.index({ category: 1, brand: 1 });
 productSchema.index({ status: 1, isFeatured: 1 });
 productSchema.index({ price: 1 });

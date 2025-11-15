@@ -1,33 +1,52 @@
-import { NextResponse } from 'next/server';
-import Product from '@/models/Product';
-import { connectDB as dbConnect } from '@/lib/mongodb';
+
+import { connectDB } from "@/lib/mongodb";
+import Product from "@/models/Product";
 
 export async function GET(request, { params }) {
+  console.log('🟢 GET /api/products/slug/[slug] - Starting request...');
+  
   try {
-    await dbConnect();
-    
-    const product = await Product.findOne({ slug: params.slug, status: 'published' })
-      .populate('createdBy', 'name email')
-      .select('-__v');
+    // FIX: await the params in API route
+    const { slug } = await params;
+    console.log('🔍 Looking for product with slug:', slug);
 
+    // Connect to database
+    console.log('🔗 Connecting to MongoDB...');
+    await connectDB();
+    console.log('✅ Connected to MongoDB');
+
+    // Find product by slug
+    console.log('🔍 Querying database for product...');
+    const product = await Product.findOne({ slug: slug });
+    
     if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
+      console.log('❌ Product not found for slug:', slug);
+      return Response.json({ 
+        success: false,
+        error: 'Product not found',
+        message: `No product found with slug: ${slug}`
+      }, { status: 404 });
     }
 
-    // Increment view count
-    await Product.findByIdAndUpdate(product._id, { 
-      $inc: { viewCount: 1 } 
+    console.log('✅ Product found:', product.name);
+    
+    // Convert Mongoose document to plain object
+    const productData = product.toObject();
+
+    return Response.json({
+      success: true,
+      product: productData,
+      message: 'Product fetched successfully'
     });
 
-    return NextResponse.json(product);
   } catch (error) {
-    console.error('Error fetching product:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('❌ GET /api/products/slug/[slug] ERROR:', error);
+    console.error('❌ Error message:', error.message);
+    
+    return Response.json({ 
+      success: false,
+      error: error.message,
+      product: null
+    }, { status: 500 });
   }
 }
