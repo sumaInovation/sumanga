@@ -1,7 +1,7 @@
 
 // app/sitemap.xml/route.js
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const baseUrl ='https://www.sumaautomation.lk';
 
   try {
     const productsRes = await fetch(`${baseUrl}/api/products`, {
