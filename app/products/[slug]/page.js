@@ -12,10 +12,16 @@ async function getProduct(slug) {
       ? process.env.NEXTAUTH_URL 
       : 'http://localhost:3000';
     
-    const res = await fetch(`${baseUrl}/api/products/slug/${slug}`, {
-      // Remove cache: 'no-store' during build
-      cache: process.env.NODE_ENV === 'production' ? 'force-cache' : 'no-store',
-      next: process.env.NODE_ENV === 'production' ? { revalidate: 3600 } : { revalidate: 0 }
+    // Add timestamp to bust cache
+    const timestamp = Date.now();
+    
+    const res = await fetch(`${baseUrl}/api/products/slug/${slug}?t=${timestamp}`, {
+      // Force no caching in production
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
     });
     
     const data = await res.json();
@@ -25,7 +31,7 @@ async function getProduct(slug) {
       return null;
     }
     
-    console.log('✅ Product fetched successfully:', data.product.name);
+    console.log('✅ Product fetched successfully:', data.product?.name);
     return data.product;
   } catch (error) {
     console.error('❌ Error fetching product:', error);
@@ -33,7 +39,6 @@ async function getProduct(slug) {
   }
 }
 
-// Generate metadata for SEO
 // Generate metadata for SEO
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -130,12 +135,7 @@ export async function generateMetadata({ params }) {
 // Generate static params for known products
 export async function generateStaticParams() {
   // Return empty array during build to avoid API calls
-  // You can add your known product slugs here for better performance
-  return [
-    { slug: 'arduino' },
-    { slug: 'arduino-mega' },
-    { slug: 'plc' },
-  ];
+  return [];
 }
 
 export default async function ProductPage({ params }) {
