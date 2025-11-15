@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+Sitemap: https://sumaautomation.lk/sitemap.xml
+
+# Bing bot specific
+User-agent: bingbot
+Allow: /
+Crawl-delay: 1
