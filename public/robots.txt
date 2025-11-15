@@ -1,21 +1,4 @@
-
-# public/robots.txt
 User-agent: *
 Allow: /
-Allow: /products
-Allow: /products/
-
-Disallow: /api/
-Disallow: /admin/
-Disallow: /login/
-Disallow: /registration/
-Disallow: /_next/
-Disallow: /private/
 
 Sitemap: https://www.sumaautomation.lk/sitemap.xml
-
-# Bing specific
-User-agent: bingbot
-Allow: /
-Allow: /products/
-Crawl-delay: 1
