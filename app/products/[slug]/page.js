@@ -40,23 +40,72 @@ async function getProduct(slug) {
 }
 
 // Generate metadata for SEO
+// Generate metadata for SEO - UPDATED VERSION
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
+  const { slug } = params;
   const product = await getProduct(slug);
   
   if (!product) {
     return {
       title: 'Product Not Found - Suma Automation',
-      description: 'The Arduino product you are looking for is not available at Suma Automation.',
+      description: 'The product you are looking for is not available at Suma Automation.',
     };
   }
 
-  // Use environment variable for base URL
   const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
   
-  // Generate optimal description between 25-160 characters
+  // Enhanced title generator to fix "title too short" issue
+  const generateOptimalTitle = (product) => {
+    // Use custom metaTitle if available and long enough
+    if (product.metaTitle && product.metaTitle.length >= 25) {
+      return product.metaTitle;
+    }
+    
+    // Product-specific title templates
+    const titleTemplates = {
+      arduino: [
+        `Arduino Uno Microcontroller Board - ${product.brand} | Suma Automation Sri Lanka`,
+        `Buy Arduino Uno - ${product.brand} Microcontroller | Electronics Sri Lanka`,
+        `Arduino Uno R3 - ${product.currency} ${product.price} | Suma Automation`
+      ],
+      plc: [
+        `Siemens PLC S7-200 Automation System | Industrial PLC Sri Lanka | Suma Automation`,
+        `Siemens S7-200 PLC System - Industrial Automation | ${product.currency} ${product.price}`,
+        `Industrial PLC Systems - Siemens S7-200 | Automation Sri Lanka`
+      ],
+      default: [
+        `${product.name} - ${product.brand} ${product.category} | Suma Automation Sri Lanka`,
+        `Buy ${product.name} - ${product.brand} | ${product.category} Systems Sri Lanka`,
+        `${product.name} | ${product.brand} ${product.category} | Suma Automation`
+      ]
+    };
+
+    // Determine which template to use based on product name/category
+    const productName = product.name.toLowerCase();
+    const category = product.category?.toLowerCase();
+    
+    let templates;
+    if (productName.includes('arduino') || category?.includes('arduino')) {
+      templates = titleTemplates.arduino;
+    } else if (productName.includes('plc') || category?.includes('plc')) {
+      templates = titleTemplates.plc;
+    } else {
+      templates = titleTemplates.default;
+    }
+
+    // Select the first template that fits within 60 characters
+    for (const title of templates) {
+      if (title.length <= 60) {
+        return title;
+      }
+    }
+    
+    // Fallback
+    return `${product.name} - ${product.brand} | Suma Automation Sri Lanka`.substring(0, 60);
+  };
+
+  // Your existing description generator (keep this)
   const generateOptimalDescription = (product) => {
-    // Try existing descriptions first
     const existingDescription = product.metaDescription || 
       product.shortDescription || 
       product.description?.substring(0, 160);
@@ -65,40 +114,32 @@ export async function generateMetadata({ params }) {
       return existingDescription.replace(/<[^>]*>/g, '').substring(0, 160);
     }
     
-    // Enhanced fallback descriptions
     const enhancedDescriptions = [
       `Buy ${product.name} from ${product.brand}. ${product.category} available for ${product.currency} ${product.price}. Fast shipping across Sri Lanka.`,
       `Purchase ${product.name} - ${product.brand} ${product.category}. Best price ${product.currency} ${product.price}. Official warranty. Order from Suma Automation.`,
-      `${product.name} by ${product.brand}. ${product.category} available in Sri Lanka. Price: ${product.currency} ${product.price}. Fast delivery from Suma Automation.`,
-      `Get ${product.name} from ${product.brand}. ${product.category} at best price ${product.currency} ${product.price}. Official products with warranty in Sri Lanka.`
     ];
     
-    // Select the most appropriate description
-    let selectedDescription = enhancedDescriptions[0];
-    
-    // Choose a description that fits best (prioritize shorter ones that are still descriptive)
     for (const desc of enhancedDescriptions) {
       if (desc.length >= 25 && desc.length <= 160) {
-        selectedDescription = desc;
-        break;
+        return desc;
       }
     }
     
-    // Ensure final description is within limits
-    return selectedDescription.substring(0, 160);
+    return enhancedDescriptions[0].substring(0, 160);
   };
 
-  const cleanDescription = generateOptimalDescription(product);
+  const optimalTitle = generateOptimalTitle(product);
+  const optimalDescription = generateOptimalDescription(product);
 
   return {
-    title: product.metaTitle || `${product.name} - ${product.brand} | Suma Automation`,
-    description: cleanDescription,
-    keywords: product.tags?.join(', ') || `${product.name}, ${product.brand}, electronics, Sri Lanka`,
+    title: optimalTitle,
+    description: optimalDescription,
+    keywords: `${product.name}, ${product.brand}, ${product.category}, electronics, automation, Sri Lanka`,
     
     // Open Graph
     openGraph: {
-      title: product.metaTitle || `${product.name} - ${product.brand}`,
-      description: cleanDescription,
+      title: optimalTitle,
+      description: optimalDescription,
       images: [
         {
           url: product.thumbnail || product.images?.[0]?.url || `${baseUrl}/og-image.jpg`,
@@ -115,8 +156,8 @@ export async function generateMetadata({ params }) {
     // Twitter
     twitter: {
       card: 'summary_large_image',
-      title: product.metaTitle || `${product.name} - ${product.brand}`,
-      description: cleanDescription,
+      title: optimalTitle,
+      description: optimalDescription,
       images: [product.thumbnail || product.images?.[0]?.url || `${baseUrl}/og-image.jpg`],
     },
     
@@ -131,7 +172,6 @@ export async function generateMetadata({ params }) {
     }
   };
 }
-
 // Generate static params for known products
 export async function generateStaticParams() {
   // Return empty array during build to avoid API calls
