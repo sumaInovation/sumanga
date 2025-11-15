@@ -26,46 +26,67 @@ async function getProduct(slug) {
 }
 
 // Generate metadata for SEO
-// Generate metadata for SEO
+
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const product = await getProduct(slug);
   
   if (!product) {
     return {
-      title: 'Product Not Found',
+      title: 'Product Not Found - Your Store Name',
       description: 'The product you are looking for is not available.',
     };
   }
 
+  // Use environment variable for base URL
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   const description = product.metaDescription || 
     product.shortDescription || 
     product.description?.substring(0, 160) || 
     `Buy ${product.name} from ${product.brand}. Best price ${product.currency} ${product.price}.`;
 
+  // Clean description for meta tags
+  const cleanDescription = description.replace(/<[^>]*>/g, '').substring(0, 160);
+
   return {
-    title: product.metaTitle || `${product.name} - ${product.brand}`,
-    description,
+    title: product.metaTitle || `${product.name} - ${product.brand} | Your Store Name`,
+    description: cleanDescription,
+    keywords: product.tags?.join(', ') || `${product.name}, ${product.brand}, electronics`,
+    
+    // Open Graph
     openGraph: {
       title: product.metaTitle || `${product.name} - ${product.brand}`,
-      description: description.substring(0, 160),
+      description: cleanDescription,
       images: [
         {
-          url: product.thumbnail || product.images?.[0]?.url || '/og-image.jpg',
+          url: product.thumbnail || product.images?.[0]?.url || `${baseUrl}/og-image.jpg`,
           width: 800,
           height: 600,
           alt: product.name,
         },
       ],
-      type: 'website', // Changed from 'product' to 'website'
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/products/${slug}`,
+      type: 'website',
+      url: `${baseUrl}/products/${slug}`,
+      siteName: 'Your Store Name',
     },
+    
+    // Twitter
     twitter: {
       card: 'summary_large_image',
       title: product.metaTitle || `${product.name} - ${product.brand}`,
-      description: description.substring(0, 160),
-      images: [product.thumbnail || product.images?.[0]?.url || '/og-image.jpg'],
+      description: cleanDescription,
+      images: [product.thumbnail || product.images?.[0]?.url || `${baseUrl}/og-image.jpg`],
     },
+    
+    // Additional meta tags for SEO
+    alternates: {
+      canonical: `${baseUrl}/products/${slug}`,
+    },
+    
+    // Bing verification (add your code here)
+    other: {
+      'msvalidate.01': "2E5D63B8F0683F41631830141F3AF7C0",
+    }
   };
 }
 
