@@ -171,7 +171,7 @@ export default function ProductsClient({ initialProducts }) {
           {/* Results Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">All Products</h1>
+              <h2 className="text-xl font-bold text-gray-900">All Products</h2>
               <p className="text-gray-600 text-sm mt-1">
                 Showing {filteredProductsLength} of {productsLength} product{filteredProductsLength !== 1 ? 's' : ''}
                 {(hasActiveFilters() || sortBy !== 'featured') && ' • '}
