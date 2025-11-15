@@ -1,4 +1,3 @@
-
 // app/api/products/route.js
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
@@ -17,12 +16,22 @@ export async function GET(request) {
     const products = await Product.find({}).sort({ createdAt: -1 });
     console.log(`✅ Found ${products.length} products`);
 
-    // Return success response
-    return Response.json({
+    // Return success response WITH CACHE HEADERS
+    return new Response(JSON.stringify({
       success: true,
       products: products,
       count: products.length,
       message: `Successfully fetched ${products.length} products`
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'CDN-Cache-Control': 'no-cache',
+        'Vary': '*'
+      }
     });
 
   } catch (error) {
@@ -30,12 +39,17 @@ export async function GET(request) {
     console.error('❌ Error message:', error.message);
     console.error('❌ Error stack:', error.stack);
     
-    return Response.json({ 
+    return new Response(JSON.stringify({ 
       success: false,
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       products: []
-    }, { status: 500 });
+    }), { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    });
   }
 }
 
@@ -55,17 +69,27 @@ export async function POST(request) {
     const product = await Product.create(productData);
     console.log('✅ Product created:', product._id);
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       message: 'Product created successfully',
       product
-    }, { status: 201 });
+    }), { 
+      status: 201,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    });
 
   } catch (error) {
     console.error('❌ POST /api/products ERROR:', error);
-    return Response.json({ 
+    return new Response(JSON.stringify({ 
       error: error.message,
       code: error.code
-    }, { status: 500 });
+    }), { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    });
   }
 }

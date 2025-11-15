@@ -13,9 +13,16 @@ async function ProductsGrid() {
         ? process.env.NEXTAUTH_URL 
         : 'http://localhost:3000';
       
-      const res = await fetch(`${baseUrl}/api/products`, {
-        // Remove cache: 'no-store' during build
-        next: process.env.NODE_ENV === 'production' ? { revalidate: 3600 } : { revalidate: 0 }
+      // Add timestamp to bust cache
+      const timestamp = Date.now();
+      
+      const res = await fetch(`${baseUrl}/api/products?t=${timestamp}`, {
+        // Force no caching in production
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
       
       if (!res.ok) {
@@ -24,7 +31,7 @@ async function ProductsGrid() {
       }
       
       const data = await res.json();
-      console.log('Fetched products:', data.products?.length || 0);
+      console.log('🔄 Fetched products from API:', data.products?.length || 0);
       
       // Ensure products have safe default values
       const safeProducts = data.products?.map(product => ({
@@ -46,7 +53,7 @@ async function ProductsGrid() {
       
       return { products: safeProducts };
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('❌ Error fetching products:', error);
       return { products: [] };
     }
   }
@@ -54,7 +61,8 @@ async function ProductsGrid() {
   const { products } = await getProducts();
   const publishedProducts = products.filter(p => p.status === 'published');
   
-  console.log('Published products:', publishedProducts.length);
+  console.log('📦 Published products after filter:', publishedProducts.length);
+  console.log('🔍 All products from API:', products.length);
 
   // Pass the data to the client component
   return <ProductsClient initialProducts={publishedProducts} />;
