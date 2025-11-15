@@ -1,74 +1,57 @@
 
-// app/sitemap.xml/route.js
+// app/sitemap.xml/route.js - STATIC VERSION
 export async function GET() {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
+  const baseUrl = 'https://www.sumaautomation.lk';
   
-  try {
-    // Simple static sitemap without API calls during build
-    const staticPages = [
-      '',
-      'products',
-      // Add more static pages here
-    ];
+  const urls = [
+    {
+      loc: `${baseUrl}/`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'daily',
+      priority: '1.0'
+    },
+    {
+      loc: `${baseUrl}/products`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'weekly',
+      priority: '0.8'
+    },
+    {
+      loc: `${baseUrl}/products/arduino`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'monthly',
+      priority: '0.7'
+    },
+    {
+      loc: `${baseUrl}/products/arduino-mega`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'monthly',
+      priority: '0.7'
+    },
+    {
+      loc: `${baseUrl}/products/plc`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'monthly',
+      priority: '0.7'
+    }
+  ];
 
-    // Static product slugs (add your known product slugs here)
-    const productSlugs = [
-      'arduino',
-      'arduino-mega', 
-      'plc',
-      // Add all your product slugs here
-    ];
-
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
-  ${staticPages.map(page => `
+  ${urls.map(({ loc, lastmod, changefreq, priority }) => `
   <url>
-    <loc>${baseUrl}/${page}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <changefreq>${page === '' ? 'daily' : 'weekly'}</changefreq>
-    <priority>${page === '' ? '1.0' : '0.8'}</priority>
-  </url>
-  `).join('')}
-  ${productSlugs.map(slug => `
-  <url>
-    <loc>${baseUrl}/products/${slug}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <loc>${loc}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
   </url>
   `).join('')}
 </urlset>`;
 
-    return new Response(sitemap, {
-      headers: {
-        'Content-Type': 'application/xml',
-        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate',
-      },
-    });
-  } catch (error) {
-    console.error('Error generating sitemap:', error);
-    
-    // Fallback to very basic sitemap
-    const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${baseUrl}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/products</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-</urlset>`;
-
-    return new Response(fallbackSitemap, {
-      headers: {
-        'Content-Type': 'application/xml',
-      },
-    });
-  }
+  return new Response(sitemap, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/xml'
+    }
+  });
 }
