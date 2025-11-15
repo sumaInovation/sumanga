@@ -3,112 +3,200 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sumaautomation.lk';
-
-// Fetch product by slug (server-side)
 async function getProduct(slug) {
   try {
-    const res = await fetch(`${BASE_URL}/api/products/slug/${slug}`, {
-      cache: 'no-store', // always fresh
+    console.log('🟢 Fetching product for slug:', slug);
+    
+    // Use relative URL for API calls during build
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? process.env.NEXTAUTH_URL 
+      : 'http://localhost:3000';
+    
+    // Add timestamp to bust cache
+    const timestamp = Date.now();
+    
+    const res = await fetch(`${baseUrl}/api/products/slug/${slug}?t=${timestamp}`, {
+      cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      },
+        'Pragma': 'no-cache'
+      }
     });
 
+    // Check if response is OK first - THIS IS THE KEY FIX
+    if (!res.ok) {
+      console.log('❌ API response not OK:', res.status);
+      return null;
+    }
+
+    // Parse JSON response
     const data = await res.json();
-    if (!res.ok || !data.success) return null;
+    console.log('📦 API Response data:', data);
+    
+    // Check the success flag and product existence
+    if (!data.success || !data.product) {
+      console.log('❌ Product fetch failed - no product data');
+      return null;
+    }
+    
+    console.log('✅ Product fetched successfully:', data.product.name);
     return data.product;
-  } catch (err) {
-    console.error('Error fetching product:', err);
+    
+  } catch (error) {
+    console.error('❌ Error fetching product:', error);
     return null;
   }
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }) {
-  const product = await getProduct(params.slug);
-
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  
   if (!product) {
     return {
       title: 'Product Not Found - Suma Automation',
-      description: 'The product you are looking for is not available at Suma Automation.',
+      description: 'The Arduino product you are looking for is not available at Suma Automation.',
+      robots: 'noindex, nofollow' // Add this for error pages
     };
   }
 
-  const title = product.metaTitle || `${product.name} | ${product.brand} - Suma Automation`;
-  const description =
-    product.metaDescription ||
-    product.shortDescription ||
-    product.description?.substring(0, 160) ||
-    `Buy ${product.name} from ${product.brand} - Suma Automation Sri Lanka.`;
+  // Use environment variable for base URL
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
+  
+  // Generate optimal description between 25-160 characters
+  const generateOptimalDescription = (product) => {
+    // Try existing descriptions first
+    const existingDescription = product.metaDescription || 
+      product.shortDescription || 
+      product.description?.substring(0, 160);
+    
+    if (existingDescription && existingDescription.length >= 25) {
+      return existingDescription.replace(/<[^>]*>/g, '').substring(0, 160);
+    }
+    
+    // Enhanced fallback descriptions
+    const enhancedDescriptions = [
+      `Buy ${product.name} from ${product.brand}. ${product.category} available for ${product.currency} ${product.price}. Fast shipping across Sri Lanka.`,
+      `Purchase ${product.name} - ${product.brand} ${product.category}. Best price ${product.currency} ${product.price}. Official warranty. Order from Suma Automation.`,
+      `${product.name} by ${product.brand}. ${product.category} available in Sri Lanka. Price: ${product.currency} ${product.price}. Fast delivery from Suma Automation.`,
+      `Get ${product.name} from ${product.brand}. ${product.category} at best price ${product.currency} ${product.price}. Official products with warranty in Sri Lanka.`
+    ];
+    
+    // Select the most appropriate description
+    let selectedDescription = enhancedDescriptions[0];
+    
+    // Choose a description that fits best (prioritize shorter ones that are still descriptive)
+    for (const desc of enhancedDescriptions) {
+      if (desc.length >= 25 && desc.length <= 160) {
+        selectedDescription = desc;
+        break;
+      }
+    }
+    
+    // Ensure final description is within limits
+    return selectedDescription.substring(0, 160);
+  };
+
+  const cleanDescription = generateOptimalDescription(product);
 
   return {
-    title,
-    description,
-    keywords: `${product.name}, ${product.brand}, ${product.category}, electronics, automation, Sri Lanka`,
-    alternates: { canonical: `${BASE_URL}/products/${product.slug}` },
+    title: product.metaTitle || `${product.name} - ${product.brand} | Suma Automation`,
+    description: cleanDescription,
+    keywords: product.tags?.join(', ') || `${product.name}, ${product.brand}, electronics, Sri Lanka`,
+    
+    // ADD THIS SECTION FOR SEARCH ENGINES:
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    
+    // Open Graph
     openGraph: {
-      title,
-      description,
-      type: 'website',
-      url: `${BASE_URL}/products/${product.slug}`,
-      siteName: 'Suma Automation',
+      title: product.metaTitle || `${product.name} - ${product.brand}`,
+      description: cleanDescription,
       images: [
         {
-          url: product.thumbnail || product.images?.[0]?.url || `${BASE_URL}/og-image.jpg`,
+          url: product.thumbnail || product.images?.[0]?.url || `${baseUrl}/og-image.jpg`,
           width: 800,
           height: 600,
           alt: product.name,
         },
       ],
+      type: 'website',
+      url: `${baseUrl}/products/${slug}`,
+      siteName: 'Suma Automation',
     },
+    
+    // Twitter
     twitter: {
       card: 'summary_large_image',
-      title,
-      description,
-      images: [product.thumbnail || product.images?.[0]?.url || `${BASE_URL}/og-image.jpg`],
+      title: product.metaTitle || `${product.name} - ${product.brand}`,
+      description: cleanDescription,
+      images: [product.thumbnail || product.images?.[0]?.url || `${baseUrl}/og-image.jpg`],
     },
+    
+    // Additional meta tags for SEO
+    alternates: {
+      canonical: `${baseUrl}/products/${slug}`,
+    },
+    
+    // Bing verification
     other: {
-      'msvalidate.01': '2E5D63B8F0683F41631830141F3AF7C0',
-    },
+      'msvalidate.01': "2E5D63B8F0683F41631830141F3AF7C0",
+    }
   };
 }
 
-// Pre-render known products (optional, for SSG)
+// Generate static params for known products
 export async function generateStaticParams() {
-  try {
-    const res = await fetch(`${BASE_URL}/api/products`, { cache: 'no-store' });
-    const products = await res.json();
-    return products.map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
-  }
+  // Return empty array during build to avoid API calls
+  return [];
 }
 
 export default async function ProductPage({ params }) {
-  const product = await getProduct(params.slug);
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  
+  if (!product) {
+    notFound();
+  }
 
-  if (!product) notFound();
-
-  const discount = product.originalPrice && product.originalPrice > product.price
+  // Calculate discount percentage based on your schema
+  const discountPercentage = product.originalPrice && product.originalPrice > product.price 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0;
+    : product.discount || 0;
 
+  // Use rating from your schema structure
   const rating = product.rating?.average || 0;
   const reviewCount = product.rating?.count || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
+      {/* Breadcrumb Navigation */}
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <ol className="flex items-center space-x-2 text-sm">
-            <li><Link href="/" className="text-gray-500 hover:text-gray-700">Home</Link></li>
-            <li className="flex items-center"><span className="text-gray-400 mx-2">/</span>
-              <Link href="/products" className="text-gray-500 hover:text-gray-700">Products</Link>
+            <li>
+              <Link href="/" className="text-gray-500 hover:text-gray-700">
+                Home
+              </Link>
             </li>
-            <li className="flex items-center"><span className="text-gray-400 mx-2">/</span>
+            <li className="flex items-center">
+              <span className="text-gray-400 mx-2">/</span>
+              <Link href="/products" className="text-gray-500 hover:text-gray-700">
+                Products
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <span className="text-gray-400 mx-2">/</span>
               <span className="text-gray-900 font-medium">{product.name}</span>
             </li>
           </ol>
@@ -118,8 +206,10 @@ export default async function ProductPage({ params }) {
       {/* Product Details */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Images */}
+          
+          {/* Product Images */}
           <div className="space-y-4">
+            {/* Main Image */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <Image
                 src={product.thumbnail || product.images?.[0]?.url || '/placeholder-product.jpg'}
@@ -130,13 +220,15 @@ export default async function ProductPage({ params }) {
                 priority
               />
             </div>
-            {product.images?.length > 1 && (
+            
+            {/* Thumbnail Gallery */}
+            {product.images && product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-3">
-                {product.images.slice(0, 4).map((img, i) => (
-                  <div key={i} className="aspect-square bg-white rounded-lg border border-gray-200 overflow-hidden">
+                {product.images.slice(0, 4).map((image, index) => (
+                  <div key={index} className="aspect-square bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:border-blue-500">
                     <Image
-                      src={img.url}
-                      alt={img.alt || `${product.name} - Image ${i + 1}`}
+                      src={image.url}
+                      alt={image.alt || `${product.name} - Image ${index + 1}`}
                       width={100}
                       height={100}
                       className="w-full h-full object-cover"
@@ -147,48 +239,137 @@ export default async function ProductPage({ params }) {
             )}
           </div>
 
-          {/* Info */}
+          {/* Product Info */}
           <div className="space-y-6">
+            {/* Category & Brand */}
             <div className="space-y-3">
-              <p className="text-sm font-medium text-blue-600 uppercase tracking-wide">{product.category}</p>
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{product.name}</h1>
+              <p className="text-sm font-medium text-blue-600 uppercase tracking-wide">
+                {product.category}
+              </p>
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">
+                {product.name}
+              </h1>
               <p className="text-lg text-gray-600">by {product.brand}</p>
             </div>
 
+            {/* Rating */}
             {rating > 0 && (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   <div className="flex">
-                    {[1,2,3,4,5].map(star => (
-                      <svg key={star} className={`w-5 h-5 ${star <= Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= Math.floor(rating)
+                            ? 'text-yellow-400 fill-current'
+                            : 'text-gray-300'
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     ))}
                   </div>
-                  <span className="text-lg font-semibold text-gray-900">{rating.toFixed(1)}</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {rating.toFixed(1)}
+                  </span>
                 </div>
-                <span className="text-gray-600">({reviewCount} reviews)</span>
+                <span className="text-gray-600">
+                  ({reviewCount} reviews)
+                </span>
               </div>
             )}
 
             {/* Price */}
             <div className="space-y-2">
-              <p className="text-3xl font-bold text-gray-900">{product.currency} {product.price.toFixed(2)}</p>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <p className="text-xl text-gray-500 line-through">{product.currency} {product.originalPrice.toFixed(2)} <span className="bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full">Save {discount}%</span></p>
+              <div className="flex items-center gap-4">
+                <p className="text-3xl font-bold text-gray-900">
+                  {product.currency} {typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
+                </p>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <>
+                    <p className="text-xl text-gray-500 line-through">
+                      {product.currency} {typeof product.originalPrice === 'number' ? product.originalPrice.toFixed(2) : '0.00'}
+                    </p>
+                    <span className="bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full">
+                      Save {discountPercentage}%
+                    </span>
+                  </>
+                )}
+              </div>
+              {product.isOnSale && (
+                <p className="text-green-600 font-semibold flex items-center gap-1">
+                  <span>🔥</span> Limited Time Offer
+                </p>
               )}
             </div>
 
-            {/* Stock */}
-            <p className={`text-lg font-semibold ${product.isInStock ? 'text-green-600' : 'text-red-600'}`}>
-              {product.isInStock ? '✅ In Stock' : '❌ Out of Stock'}
-            </p>
+            {/* Stock Status */}
+            <div className="space-y-2">
+              <p className={`text-lg font-semibold ${
+                product.isInStock ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {product.isInStock ? '✅ In Stock' : '❌ Out of Stock'}
+              </p>
+              {product.stock > 0 && (
+                <p className="text-gray-600">
+                  {product.stock} units available
+                </p>
+              )}
+            </div>
 
-            {/* Description */}
+            {/* SKU */}
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="font-medium">SKU:</span>
+              <span>{product.sku}</span>
+            </div>
+
+            {/* Add to Cart Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border border-gray-300 rounded-lg">
+                  <button className="px-4 py-3 text-gray-600 hover:bg-gray-100">-</button>
+                  <span className="px-4 py-3 border-l border-r border-gray-300 font-semibold">1</span>
+                  <button className="px-4 py-3 text-gray-600 hover:bg-gray-100">+</button>
+                </div>
+                
+                <button
+                  disabled={!product.isInStock}
+                  className={`flex-1 px-8 py-3 rounded-lg font-semibold text-white transition-colors ${
+                    product.isInStock
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {product.isInStock ? 'Add to Cart' : 'Out of Stock'}
+                </button>
+              </div>
+            </div>
+
+            {/* Product Description */}
             {product.description && (
               <div className="border-t border-gray-200 pt-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Description</h2>
-                <p className="text-gray-600 leading-relaxed whitespace-pre-line">{product.description}</p>
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                  {product.description}
+                </p>
+              </div>
+            )}
+
+            {/* Features */}
+            {product.features && product.features.length > 0 && (
+              <div className="border-t border-gray-200 pt-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Features</h2>
+                <ul className="space-y-2 text-gray-600">
+                  {product.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
@@ -198,5 +379,5 @@ export default async function ProductPage({ params }) {
   );
 }
 
-// Force server-side dynamic rendering
+// Force dynamic rendering to prevent static generation issues
 export const dynamic = 'force-dynamic';
