@@ -8,9 +8,14 @@ import ProductsSkeleton from './ProductsSkeleton';
 async function ProductsGrid() {
   async function getProducts() {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
-        cache: 'no-store',
-        next: { tags: ['products'] }
+      // Use relative URL for API calls during build
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? process.env.NEXTAUTH_URL 
+        : 'http://localhost:3000';
+      
+      const res = await fetch(`${baseUrl}/api/products`, {
+        // Remove cache: 'no-store' during build
+        next: process.env.NODE_ENV === 'production' ? { revalidate: 3600 } : { revalidate: 0 }
       });
       
       if (!res.ok) {
@@ -98,3 +103,6 @@ export default function ProductsPage() {
     </div>
   );
 }
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic';

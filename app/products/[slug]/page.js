@@ -6,8 +6,16 @@ import Link from 'next/link';
 async function getProduct(slug) {
   try {
     console.log('🟢 Fetching product for slug:', slug);
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/slug/${slug}`, {
-      cache: 'no-store'
+    
+    // Use relative URL for API calls during build
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? process.env.NEXTAUTH_URL 
+      : 'http://localhost:3000';
+    
+    const res = await fetch(`${baseUrl}/api/products/slug/${slug}`, {
+      // Remove cache: 'no-store' during build
+      cache: process.env.NODE_ENV === 'production' ? 'force-cache' : 'no-store',
+      next: process.env.NODE_ENV === 'production' ? { revalidate: 3600 } : { revalidate: 0 }
     });
     
     const data = await res.json();
@@ -26,20 +34,19 @@ async function getProduct(slug) {
 }
 
 // Generate metadata for SEO
-
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const product = await getProduct(slug);
   
   if (!product) {
     return {
-      title: 'Product Not Found - Your Store Name',
+      title: 'Product Not Found - Suma Automation',
       description: 'The product you are looking for is not available.',
     };
   }
 
   // Use environment variable for base URL
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
   const description = product.metaDescription || 
     product.shortDescription || 
     product.description?.substring(0, 160) || 
@@ -49,7 +56,7 @@ export async function generateMetadata({ params }) {
   const cleanDescription = description.replace(/<[^>]*>/g, '').substring(0, 160);
 
   return {
-    title: product.metaTitle || `${product.name} - ${product.brand} | Your Store Name`,
+    title: product.metaTitle || `${product.name} - ${product.brand} | Suma Automation`,
     description: cleanDescription,
     keywords: product.tags?.join(', ') || `${product.name}, ${product.brand}, electronics`,
     
@@ -67,7 +74,7 @@ export async function generateMetadata({ params }) {
       ],
       type: 'website',
       url: `${baseUrl}/products/${slug}`,
-      siteName: 'Your Store Name',
+      siteName: 'Suma Automation',
     },
     
     // Twitter
@@ -83,11 +90,22 @@ export async function generateMetadata({ params }) {
       canonical: `${baseUrl}/products/${slug}`,
     },
     
-    // Bing verification (add your code here)
+    // Bing verification
     other: {
       'msvalidate.01': "2E5D63B8F0683F41631830141F3AF7C0",
     }
   };
+}
+
+// Generate static params for known products
+export async function generateStaticParams() {
+  // Return empty array during build to avoid API calls
+  // You can add your known product slugs here for better performance
+  return [
+    { slug: 'arduino' },
+    { slug: 'arduino-mega' },
+    { slug: 'plc' },
+  ];
 }
 
 export default async function ProductPage({ params }) {
@@ -307,3 +325,6 @@ export default async function ProductPage({ params }) {
     </div>
   );
 }
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic';
