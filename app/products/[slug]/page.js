@@ -34,6 +34,7 @@ async function getProduct(slug) {
 }
 
 // Generate metadata for SEO
+// Generate metadata for SEO
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const product = await getProduct(slug);
@@ -41,24 +42,53 @@ export async function generateMetadata({ params }) {
   if (!product) {
     return {
       title: 'Product Not Found - Suma Automation',
-      description: 'The product you are looking for is not available.',
+      description: 'The Arduino product you are looking for is not available at Suma Automation.',
     };
   }
 
   // Use environment variable for base URL
   const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
-  const description = product.metaDescription || 
-    product.shortDescription || 
-    product.description?.substring(0, 160) || 
-    `Buy ${product.name} from ${product.brand}. Best price ${product.currency} ${product.price}.`;
+  
+  // Generate optimal description between 25-160 characters
+  const generateOptimalDescription = (product) => {
+    // Try existing descriptions first
+    const existingDescription = product.metaDescription || 
+      product.shortDescription || 
+      product.description?.substring(0, 160);
+    
+    if (existingDescription && existingDescription.length >= 25) {
+      return existingDescription.replace(/<[^>]*>/g, '').substring(0, 160);
+    }
+    
+    // Enhanced fallback descriptions
+    const enhancedDescriptions = [
+      `Buy ${product.name} from ${product.brand}. ${product.category} available for ${product.currency} ${product.price}. Fast shipping across Sri Lanka.`,
+      `Purchase ${product.name} - ${product.brand} ${product.category}. Best price ${product.currency} ${product.price}. Official warranty. Order from Suma Automation.`,
+      `${product.name} by ${product.brand}. ${product.category} available in Sri Lanka. Price: ${product.currency} ${product.price}. Fast delivery from Suma Automation.`,
+      `Get ${product.name} from ${product.brand}. ${product.category} at best price ${product.currency} ${product.price}. Official products with warranty in Sri Lanka.`
+    ];
+    
+    // Select the most appropriate description
+    let selectedDescription = enhancedDescriptions[0];
+    
+    // Choose a description that fits best (prioritize shorter ones that are still descriptive)
+    for (const desc of enhancedDescriptions) {
+      if (desc.length >= 25 && desc.length <= 160) {
+        selectedDescription = desc;
+        break;
+      }
+    }
+    
+    // Ensure final description is within limits
+    return selectedDescription.substring(0, 160);
+  };
 
-  // Clean description for meta tags
-  const cleanDescription = description.replace(/<[^>]*>/g, '').substring(0, 160);
+  const cleanDescription = generateOptimalDescription(product);
 
   return {
     title: product.metaTitle || `${product.name} - ${product.brand} | Suma Automation`,
     description: cleanDescription,
-    keywords: product.tags?.join(', ') || `${product.name}, ${product.brand}, electronics`,
+    keywords: product.tags?.join(', ') || `${product.name}, ${product.brand}, electronics, Sri Lanka`,
     
     // Open Graph
     openGraph: {
