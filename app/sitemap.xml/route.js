@@ -1,20 +1,17 @@
 
 // app/sitemap.xml/route.js
+import { getProductSlugsForSitemap } from '@/lib/products-data';
+
 export async function GET() {
-  const baseUrl ='https://www.sumaautomation.lk';
+  const baseUrl = 'https://www.sumaautomation.lk';
 
   try {
-    const productsRes = await fetch(`${baseUrl}/api/products`, {
-      cache: 'no-store'
-    });
+    console.log('🗺️ Generating sitemap with direct database access...');
+    const products = await getProductSlugsForSitemap();
+    
+    console.log(`📝 Sitemap processing ${products.length} products`);
 
-    let products = [];
-    if (productsRes.ok) {
-      const data = await productsRes.json();
-      products = data.products || [];
-    }
-
-    const urls = [
+    const staticUrls = [
       {
         loc: `${baseUrl}/`,
         lastmod: new Date().toISOString(),
@@ -31,12 +28,12 @@ export async function GET() {
 
     const productUrls = products.map(product => ({
       loc: `${baseUrl}/products/${product.slug}`,
-      lastmod: new Date().toISOString(),
+      lastmod: product.updatedAt?.toISOString() || new Date().toISOString(),
       changefreq: 'monthly',
       priority: '0.7'
     }));
 
-    const allUrls = [...urls, ...productUrls];
+    const allUrls = [...staticUrls, ...productUrls];
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -50,19 +47,44 @@ ${allUrls.map(({ loc, lastmod, changefreq, priority }) => `
 `).join('')}
 </urlset>`;
 
+    console.log(`✅ Sitemap generated successfully with ${allUrls.length} URLs`);
+
     return new Response(sitemap, {
-      headers: { 'Content-Type': 'application/xml' }
+      headers: { 
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=1800' // Cache 1 hour
+      }
     });
 
   } catch (error) {
-    return new Response(
-      `<?xml version="1.0" encoding="UTF-8"?>
-       <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-         <url>
-           <loc>${baseUrl}</loc>
-         </url>
-       </urlset>`,
-      { headers: { 'Content-Type': 'application/xml' } }
-    );
+    console.error('❌ Sitemap generation failed:', error);
+    return generateFallbackSitemap(baseUrl);
   }
 }
+
+function generateFallbackSitemap(baseUrl) {
+  const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/products</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`;
+
+  return new Response(fallbackSitemap, {
+    headers: { 
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'no-cache'
+    }
+  });
+}
+
+export const dynamic = 'force-dynamic';

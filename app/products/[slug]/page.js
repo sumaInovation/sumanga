@@ -1,36 +1,36 @@
 
+// app/products/[slug]/page.js
+import { getProductSlugsForSitemap } from '@/lib/products-data';
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-// Client Component for Images with error handling
-function ProductImage({ src, alt, width, height, className, priority }) {
-  return (
-    <Image
-      src={src || "/placeholder.jpg"}
-      width={width}
-      height={height}
-      alt={alt}
-      className={className}
-      priority={priority}
-    />
-  );
+// REMOVE THIS DUPLICATE FUNCTION - it's already in lib/products-data.js
+// export async function getProductSlugsForSitemap() {
+//   try {
+//     await connectDB();
+//     // ... your code
+//   } catch (error) {
+//     return [];
+//   }
+// }
+
+export async function generateStaticParams() {
+  try {
+    const products = await getProductSlugsForSitemap();
+    
+    console.log(`📄 Generating static pages for ${products.length} products`);
+    
+    return products.map((product) => ({
+      slug: product.slug,
+    }));
+  } catch (error) {
+    console.warn('Failed to generate static params:', error);
+    return [];
+  }
 }
 
-// Client Component for Thumbnail Images
-function ThumbnailImage({ src, alt, width, height, className }) {
-  return (
-    <Image
-      src={src}
-      width={width}
-      height={height}
-      alt={alt}
-      className={className}
-    />
-  );
-}
-
-// SERVER-SIDE FETCH with enhanced error handling
+// Your existing getProduct function
 async function getProduct(slug) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -40,9 +40,8 @@ async function getProduct(slug) {
       return null;
     }
 
-    // Add timeout for fetch
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     const res = await fetch(`${baseUrl}/api/products/slug/${slug}`, {
       method: 'GET',
@@ -68,142 +67,7 @@ async function getProduct(slug) {
   }
 }
 
-// Generate static params for better performance
-export async function generateStaticParams() {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    
-    if (!baseUrl) {
-      console.warn('NEXT_PUBLIC_BASE_URL not available during build');
-      return [];
-    }
-
-    // Fetch all product slugs for static generation
-    const res = await fetch(`${baseUrl}/api/products/slugs`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
-
-    if (!res.ok) {
-      console.warn('Failed to fetch slugs for static generation');
-      return [];
-    }
-
-    const data = await res.json();
-    
-    // Handle both array and object responses
-    const slugs = data.slugs || data.products || [];
-    
-    return slugs.map((slug) => ({
-      slug: slug.toString(),
-    }));
-  } catch (error) {
-    console.warn('Error generating static params:', error);
-    return [];
-  }
-}
-
-// SEO METADATA - FIXED OpenGraph type
-export async function generateMetadata({ params }) {
-  try {
-    // Ensure params is resolved
-    const resolvedParams = await params;
-    const slug = resolvedParams.slug;
-
-    if (!slug) {
-      return {
-        title: "Product Not Found | Suma Automation",
-        description: "This product is not available.",
-        robots: "noindex, nofollow",
-      };
-    }
-
-    const product = await getProduct(slug);
-
-    if (!product) {
-      return {
-        title: "Product Not Found | Suma Automation",
-        description: "This product is not available.",
-        robots: "noindex, nofollow",
-      };
-    }
-
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-    const ogImageUrl = `${baseUrl}/api/og/${slug}`;
-    const canonicalUrl = `${baseUrl}/products/${slug}`;
-
-    const metaTitle = product.metaTitle || `${product.name} – ${product.brand} | Suma Automation`;
-    const metaDescription = product.metaDescription || 
-      product.shortDescription?.substring(0, 160) || 
-      product.description?.substring(0, 160) || 
-      `Buy ${product.name} from ${product.brand} at Suma Automation`;
-
-    return {
-      title: metaTitle,
-      description: metaDescription,
-      alternates: {
-        canonical: canonicalUrl,
-      },
-      robots: "index, follow",
-      openGraph: {
-        title: product.metaTitle || `${product.name} – ${product.brand}`,
-        description: metaDescription,
-        url: canonicalUrl,
-        type: 'website', // CHANGED: Use 'website' instead of 'product'
-        images: [
-          {
-            url: product.thumbnail || product.images?.[0]?.url || '/placeholder.jpg',
-            width: 1200,
-            height: 630,
-            alt: product.name,
-          },
-        ],
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: product.metaTitle || product.name,
-        description: metaDescription,
-        images: [product.thumbnail || product.images?.[0]?.url || '/placeholder.jpg'],
-      },
-      // Remove problematic product metadata or use valid OpenGraph product tags
-      other: {
-        // Use valid OpenGraph product properties if needed
-        // 'og:price:amount': product.price,
-        // 'og:price:currency': product.currency || 'USD',
-      },
-    };
-  } catch (error) {
-    console.error('Error generating metadata:', error);
-    return {
-      title: "Product Page | Suma Automation",
-      description: "Product details page",
-      robots: "noindex, nofollow",
-    };
-  }
-}
-
-// Debug component for development
-function DebugInfo({ product, slug, baseUrl }) {
-  if (process.env.NODE_ENV === 'development') {
-    return (
-      <div className="fixed bottom-4 right-4 bg-red-100 border border-red-400 p-4 rounded-lg z-50 max-w-md">
-        <h3 className="font-bold text-red-800">Debug Info:</h3>
-        <p><strong>Slug:</strong> {slug}</p>
-        <p><strong>Product:</strong> {product ? 'Found' : 'Not Found'}</p>
-        <p><strong>Base URL:</strong> {baseUrl}</p>
-        <p><strong>NODE_ENV:</strong> {process.env.NODE_ENV}</p>
-        {product && (
-          <>
-            <p><strong>Product Name:</strong> {product.name}</p>
-            <p><strong>Product ID:</strong> {product.id}</p>
-          </>
-        )}
-      </div>
-    );
-  }
-  return null;
-}
-
-// PAGE COMPONENT - FIXED event handlers
+// Your existing page component
 export default async function ProductPage({ params }) {
   try {
     const resolvedParams = await params;
@@ -268,13 +132,13 @@ export default async function ProductPage({ params }) {
           {/* Product Images */}
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <ProductImage
-                src={product.thumbnail || product.images?.[0]?.url}
+              <Image
+                src={product.thumbnail || product.images?.[0]?.url || "/placeholder.jpg"}
                 width={600}
                 height={600}
                 alt={product.name}
                 className="w-full h-auto object-cover transition-transform duration-300 hover:scale-105"
-                priority={true}
+                priority
               />
             </div>
 
@@ -285,7 +149,7 @@ export default async function ProductPage({ params }) {
                     key={i} 
                     className="border-2 border-slate-200 rounded-xl bg-white overflow-hidden hover:border-blue-500 transition-all duration-200 hover:shadow-md"
                   >
-                    <ThumbnailImage
+                    <Image
                       src={img.url}
                       width={200}
                       height={200}
@@ -400,9 +264,6 @@ export default async function ProductPage({ params }) {
             )}
           </div>
         </div>
-
-        {/* Debug Info - Only in development */}
-        <DebugInfo product={product} slug={slug} baseUrl={baseUrl} />
       </div>
     );
   } catch (error) {
@@ -411,5 +272,4 @@ export default async function ProductPage({ params }) {
   }
 }
 
-// FULL SSR – SEO friendly
 export const dynamic = "force-dynamic";
