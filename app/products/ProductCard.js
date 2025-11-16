@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +10,41 @@ export default function ProductCard({ product }) {
 
   const rating = typeof product.rating === 'number' ? product.rating : 0;
 
+  // ✅ PRODUCT STRUCTURED DATA - Add this block
+  const productStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.shortDescription || product.description || `Buy ${product.name} in Sri Lanka`,
+    "image": product.thumbnail || product.images?.[0]?.url || '/placeholder-product.jpg',
+    "sku": product.sku || product._id,
+    "brand": {
+      "@type": "Brand",
+      "name": product.brand || "Suma Automation"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": product.price?.toString() || "0",
+      "priceCurrency": product.currency || "LKR",
+      "availability": product.isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      ...(product.originalPrice && product.originalPrice > product.price && {
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "price": product.price,
+          "originalPrice": product.originalPrice
+        }
+      })
+    },
+    ...(rating > 0 && {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": rating.toString(),
+        "reviewCount": (product.reviewCount || 1).toString()
+      }
+    })
+  };
+
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -21,6 +55,12 @@ export default function ProductCard({ product }) {
 
   return (
     <div className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+      {/* ✅ ADD STRUCTURED DATA SCRIPT - Add this line */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productStructuredData) }}
+      />
+      
       <Link href={`/products/${product.slug}`} className="block">
         {/* Compact Image */}
         <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
