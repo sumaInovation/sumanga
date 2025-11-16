@@ -16,24 +16,24 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 export const metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Sumanga - Electronics & Arduino Components",
-    template: "%s | Sumanga"
+    default: "sumaautomation - Arduino, PLC, HMI & Electronics in Sri Lanka",
+    template: "%s | sumaautomation"
   },
-  description: "Buy quality Arduino boards, PLC systems, and electronic components at best prices in Sri Lanka. Fast delivery and expert support.",
-  keywords: "arduino, electronics, plc, sensors, sri lanka, components, robotics",
+  description: "Sri Lanka's leading supplier of Arduino boards, PLC systems, HMI panels, microcontrollers, sensors & automation components. Best prices, expert support & fast delivery.",
+  keywords: "arduino, plc, hmi, microcontroller, sensors, automation, electronics, sri lanka, industrial automation, robotics, components",
   
   // Open Graph
   openGraph: {
-    title: "Sumanga - Electronics & Arduino Components",
-    description: "Buy quality Arduino boards, PLC systems, and electronic components at best prices in Sri Lanka.",
+    title: "sumaautomation - Arduino, PLC & Automation Components in Sri Lanka",
+    description: "Your trusted partner for Arduino, PLC systems, HMI panels and industrial automation components in Sri Lanka.",
     url: baseUrl,
-    siteName: "Sumanga",
+    siteName: "sumaautomation",
     images: [
       {
-        url: `${baseUrl}/og-image.jpg`, // Create this image in public folder
+        url: `${baseUrl}/title.jpg`,
         width: 1200,
         height: 630,
-        alt: "Sumanga Electronics",
+        alt: "sumaautomation - Arduino, PLC & Electronics in Sri Lanka",
       },
     ],
     locale: "en_US",
@@ -43,9 +43,9 @@ export const metadata = {
   // Twitter
   twitter: {
     card: "summary_large_image",
-    title: "Sumanga - Electronics & Arduino Components",
-    description: "Buy quality Arduino boards, PLC systems, and electronic components at best prices in Sri Lanka.",
-    images: [`${baseUrl}/og-image.jpg`],
+    title: "sumaautomation - Arduino, PLC & Electronic Components in Sri Lanka",
+    description: "Quality Arduino boards, PLC systems, HMI panels and automation components in Sri Lanka.",
+    images: [`${baseUrl}/title.jpg`],
   },
   
   // Additional SEO
@@ -61,13 +61,9 @@ export const metadata = {
     },
   },
   
-  // Verification (Add your codes here after deployment)
+  // Verification
   other: {
-    // Bing Verification (get from Bing Webmaster Tools)
     'msvalidate.01': '2E5D63B8F0683F41631830141F3AF7C0',
-    
-    // Google Verification (optional)
-    // 'google-site-verification': 'YOUR_GOOGLE_VERIFICATION_CODE',
   }
 };
 

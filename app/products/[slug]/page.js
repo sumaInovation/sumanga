@@ -5,16 +5,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-// REMOVE THIS DUPLICATE FUNCTION - it's already in lib/products-data.js
-// export async function getProductSlugsForSitemap() {
-//   try {
-//     await connectDB();
-//     // ... your code
-//   } catch (error) {
-//     return [];
-//   }
-// }
-
+// Generate static paths for all products
 export async function generateStaticParams() {
   try {
     const products = await getProductSlugsForSitemap();
@@ -30,7 +21,7 @@ export async function generateStaticParams() {
   }
 }
 
-// Your existing getProduct function
+// Fetch product data
 async function getProduct(slug) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -67,7 +58,80 @@ async function getProduct(slug) {
   }
 }
 
-// Your existing page component
+// Dynamic metadata for SEO
+export async function generateMetadata({ params }) {
+  try {
+    const resolvedParams = await params;
+    const slug = resolvedParams.slug;
+
+    if (!slug) {
+      return {
+        title: "Product Not Found | sumaautomation",
+        description: "Product not found. Browse our Arduino, PLC and electronics components in Sri Lanka."
+      };
+    }
+
+    const product = await getProduct(slug);
+    
+    if (!product) {
+      return {
+        title: "Product Not Found | sumaautomation",
+        description: "Product not found. Browse our Arduino, PLC and electronics components in Sri Lanka."
+      };
+    }
+
+    // Create SEO-optimized title and description
+    const seoTitle = `${product.name} - Buy in Sri Lanka | sumaautomation`;
+    const seoDescription = `Buy ${product.name} in Sri Lanka. ${product.description?.substring(0, 160) || 'Best quality electronic components'} Best price, fast delivery, expert support for Arduino and PLC projects.`;
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sumaautomation.lk';
+
+    return {
+      title: seoTitle,
+      description: seoDescription,
+      
+      alternates: {
+        canonical: `${baseUrl}/products/${slug}`,
+      },
+      
+      openGraph: {
+        title: `${product.name} - sumaautomation`,
+        description: seoDescription,
+        url: `${baseUrl}/products/${slug}`,
+        images: [
+          {
+            url: product.thumbnail || product.images?.[0]?.url || `${baseUrl}/title.jpg`,
+            width: 1200,
+            height: 630,
+            alt: product.name,
+          },
+        ],
+        type: 'article',
+      },
+      
+      twitter: {
+        card: "summary_large_image",
+        title: `${product.name} - sumaautomation`,
+        description: seoDescription,
+      },
+      
+      keywords: `${product.name}, ${product.brand}, arduino, plc, electronics, sri lanka, buy ${product.name.toLowerCase()}`,
+      
+      robots: {
+        index: true,
+        follow: true,
+      }
+    };
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+    return {
+      title: "Product Page | sumaautomation",
+      description: "Browse our electronics components and automation products in Sri Lanka."
+    };
+  }
+}
+
+// Main page component
 export default async function ProductPage({ params }) {
   try {
     const resolvedParams = await params;
@@ -214,6 +278,11 @@ export default async function ProductPage({ params }) {
               {product.isInStock ? "In Stock - Ready to Ship" : "Out of Stock"}
             </div>
 
+            {/* Add to Cart Button */}
+            <button className="w-full bg-linear-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-lg">
+              🛒 Add to Cart - {product.currency} {product.price}
+            </button>
+
             {/* Description */}
             {product.description && (
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
@@ -262,6 +331,22 @@ export default async function ProductPage({ params }) {
                 </dl>
               </div>
             )}
+
+            {/* Related Products Suggestion */}
+            <div className="bg-linear-to-r from-blue-50 to-indigo-100 rounded-2xl p-6 border border-blue-200">
+              <h3 className="text-xl font-bold text-slate-900 mb-4">
+                🔧 Need More Components?
+              </h3>
+              <p className="text-slate-700 mb-4">
+                Check out our complete range of Arduino boards, PLC systems, and electronic components for your projects.
+              </p>
+              <Link 
+                href="/products" 
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:shadow-lg"
+              >
+                Browse All Products →
+              </Link>
+            </div>
           </div>
         </div>
       </div>
