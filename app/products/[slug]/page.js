@@ -3,6 +3,33 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+// Client Component for Images with error handling
+function ProductImage({ src, alt, width, height, className, priority }) {
+  return (
+    <Image
+      src={src || "/placeholder.jpg"}
+      width={width}
+      height={height}
+      alt={alt}
+      className={className}
+      priority={priority}
+    />
+  );
+}
+
+// Client Component for Thumbnail Images
+function ThumbnailImage({ src, alt, width, height, className }) {
+  return (
+    <Image
+      src={src}
+      width={width}
+      height={height}
+      alt={alt}
+      className={className}
+    />
+  );
+}
+
 // SERVER-SIDE FETCH with enhanced error handling
 async function getProduct(slug) {
   try {
@@ -23,7 +50,6 @@ async function getProduct(slug) {
         'Content-Type': 'application/json',
       },
       cache: "no-store",
-      next: { revalidate: 0 },
       signal: controller.signal,
     });
 
@@ -54,7 +80,7 @@ export async function generateStaticParams() {
 
     // Fetch all product slugs for static generation
     const res = await fetch(`${baseUrl}/api/products/slugs`, {
-      cache: 'no-store'
+      next: { revalidate: 3600 } // Cache for 1 hour
     });
 
     if (!res.ok) {
@@ -76,7 +102,7 @@ export async function generateStaticParams() {
   }
 }
 
-// SEO METADATA
+// SEO METADATA - FIXED OpenGraph type
 export async function generateMetadata({ params }) {
   try {
     // Ensure params is resolved
@@ -122,10 +148,10 @@ export async function generateMetadata({ params }) {
         title: product.metaTitle || `${product.name} – ${product.brand}`,
         description: metaDescription,
         url: canonicalUrl,
-        type: 'product',
+        type: 'website', // CHANGED: Use 'website' instead of 'product'
         images: [
           {
-            url: ogImageUrl,
+            url: product.thumbnail || product.images?.[0]?.url || '/placeholder.jpg',
             width: 1200,
             height: 630,
             alt: product.name,
@@ -136,13 +162,13 @@ export async function generateMetadata({ params }) {
         card: "summary_large_image",
         title: product.metaTitle || product.name,
         description: metaDescription,
-        images: [ogImageUrl],
+        images: [product.thumbnail || product.images?.[0]?.url || '/placeholder.jpg'],
       },
+      // Remove problematic product metadata or use valid OpenGraph product tags
       other: {
-        'product:price:amount': product.price,
-        'product:price:currency': product.currency || 'USD',
-        'product:brand': product.brand,
-        'product:availability': product.isInStock ? 'in stock' : 'out of stock',
+        // Use valid OpenGraph product properties if needed
+        // 'og:price:amount': product.price,
+        // 'og:price:currency': product.currency || 'USD',
       },
     };
   } catch (error) {
@@ -177,7 +203,7 @@ function DebugInfo({ product, slug, baseUrl }) {
   return null;
 }
 
-// PAGE COMPONENT
+// PAGE COMPONENT - FIXED event handlers
 export default async function ProductPage({ params }) {
   try {
     const resolvedParams = await params;
@@ -205,7 +231,7 @@ export default async function ProductPage({ params }) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
 
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         {/* Navigation Breadcrumb */}
         <nav className="bg-white/80 backdrop-blur-sm border-b border-slate-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 py-4">
@@ -242,16 +268,13 @@ export default async function ProductPage({ params }) {
           {/* Product Images */}
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <Image
-                src={product.thumbnail || product.images?.[0]?.url || "/placeholder.jpg"}
+              <ProductImage
+                src={product.thumbnail || product.images?.[0]?.url}
                 width={600}
                 height={600}
                 alt={product.name}
                 className="w-full h-auto object-cover transition-transform duration-300 hover:scale-105"
-                priority
-                onError={(e) => {
-                  e.target.src = "/placeholder.jpg";
-                }}
+                priority={true}
               />
             </div>
 
@@ -262,15 +285,12 @@ export default async function ProductPage({ params }) {
                     key={i} 
                     className="border-2 border-slate-200 rounded-xl bg-white overflow-hidden hover:border-blue-500 transition-all duration-200 hover:shadow-md"
                   >
-                    <Image
+                    <ThumbnailImage
                       src={img.url}
                       width={200}
                       height={200}
                       alt={`${product.name} - Image ${i + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
                     />
                   </div>
                 ))}
@@ -302,7 +322,7 @@ export default async function ProductPage({ params }) {
             )}
 
             {/* Pricing */}
-            <div className="space-y-3 bg-linear-to-r from-white to-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <div className="space-y-3 bg-gradient-to-r from-white to-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
               <p className="text-4xl font-bold text-slate-900">
                 {product.currency} {product.price}
               </p>
@@ -311,7 +331,7 @@ export default async function ProductPage({ params }) {
                   <p className="line-through text-slate-500 text-xl font-medium">
                     {product.currency} {product.originalPrice}
                   </p>
-                  <span className="bg-linear-to-r from-red-500 to-pink-600 text-white text-sm px-4 py-2 rounded-full font-bold shadow-lg">
+                  <span className="bg-gradient-to-r from-red-500 to-pink-600 text-white text-sm px-4 py-2 rounded-full font-bold shadow-lg">
                     🎉 Save {discountPercentage}%
                   </span>
                 </div>
@@ -321,8 +341,8 @@ export default async function ProductPage({ params }) {
             {/* Stock Status */}
             <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white ${
               product.isInStock 
-                ? "bg-linear-to-r from-green-500 to-emerald-600 shadow-lg" 
-                : "bg-linear-to-r from-red-500 to-rose-600 shadow-lg"
+                ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg" 
+                : "bg-gradient-to-r from-red-500 to-rose-600 shadow-lg"
             }`}>
               <span className="text-lg">
                 {product.isInStock ? "✓" : "✗"}
@@ -393,5 +413,3 @@ export default async function ProductPage({ params }) {
 
 // FULL SSR – SEO friendly
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
