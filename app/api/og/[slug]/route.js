@@ -1,8 +1,10 @@
+
 import { ImageResponse } from '@vercel/og';
 import { connectDB } from '@/lib/mongodb';
 import Product from '@/models/Product';
 
-export const runtime = 'edge';
+// runtime nodejs
+export const runtime = 'nodejs';
 
 export async function GET(req, { params }) {
   try {
@@ -11,7 +13,9 @@ export async function GET(req, { params }) {
     await connectDB();
     const product = await Product.findOne({ slug }).lean();
 
-    if (!product) return new Response('Product not found', { status: 404 });
+    if (!product) {
+      return new Response('Product not found', { status: 404 });
+    }
 
     return new ImageResponse(
       (
@@ -28,9 +32,10 @@ export async function GET(req, { params }) {
             fontWeight: 'bold',
             color: '#111',
             padding: 40,
+            fontFamily: 'Arial, sans-serif',
           }}
         >
-          <div>{product.name}</div>
+          <div style={{ textAlign: 'center' }}>{product.name}</div>
           <div style={{ fontSize: 40, color: '#555', marginTop: 20 }}>
             {product.brand}
           </div>
@@ -42,7 +47,7 @@ export async function GET(req, { params }) {
       }
     );
   } catch (err) {
-    console.error(err);
+    console.error('OG Image Error:', err);
     return new Response('Failed to generate image', { status: 500 });
   }
 }
