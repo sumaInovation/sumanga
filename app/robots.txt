@@ -1,0 +1,13 @@
+// app/robots.txt
+export default function robots() {
+  return {
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/api/', '/admin/', '/private/'],
+      },
+    ],
+    sitemap: 'https://www.sumaautomation.lk/sitemap.xml',
+  };
+}
