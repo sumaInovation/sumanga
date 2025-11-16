@@ -96,7 +96,7 @@ export default function HomePage() {
 // Add specific metadata for homepage to override layout defaults
 // app/page.js - Homepage specific metadata
 export const metadata = {
-  title: "Home",
+  title: "sumaautomation.lk",
   description: "Sri Lanka's leading supplier of Arduino boards, PLC systems, HMI panels, microcontrollers, sensors & automation components. Best prices, expert support & fast delivery.",
   
   alternates: {
