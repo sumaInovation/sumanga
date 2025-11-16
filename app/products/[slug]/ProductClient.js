@@ -190,7 +190,7 @@ export default function ProductClient({ product }) {
                 {[0, 1, 2, 3, 4].map((rating) => (
                   <svg
                     key={rating}
-                    className={`h-5 w-5 flex-shrink-0 ${
+                    className={`h-5 w-5 shrink-0 ${
                       product.rating?.average > rating ? 'text-yellow-400' : 'text-gray-300'
                     }`}
                     fill="currentColor"
@@ -408,7 +408,7 @@ export default function ProductClient({ product }) {
                       {[0, 1, 2, 3, 4].map((rating) => (
                         <svg
                           key={rating}
-                          className={`h-5 w-5 flex-shrink-0 ${
+                          className={`h-5 w-5 shrink-0 ${
                             product.rating?.average > rating ? 'text-yellow-400' : 'text-gray-300'
                           }`}
                           fill="currentColor"

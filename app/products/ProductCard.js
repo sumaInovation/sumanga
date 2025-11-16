@@ -23,7 +23,7 @@ export default function ProductCard({ product }) {
     <div className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
       <Link href={`/products/${product.slug}`} className="block">
         {/* Compact Image */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
           <Image
             src={product.thumbnail || product.images?.[0]?.url || '/placeholder-product.jpg'}
             alt={product.name}
@@ -43,7 +43,7 @@ export default function ProductCard({ product }) {
         {/* Compact Product Info */}
         <div className="p-3">
           {/* Product Name */}
-          <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors min-h-[2.5rem]">
+          <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors min-h-10">
             {product.name}
           </h3>
 
@@ -96,7 +96,7 @@ export default function ProductCard({ product }) {
             
             {/* Add to Cart Button */}
             <button 
-              className={`flex-shrink-0 px-3 py-2 rounded text-sm font-semibold transition-all duration-150 whitespace-nowrap ${
+              className={`shrink-0 px-3 py-2 rounded text-sm font-semibold transition-all duration-150 whitespace-nowrap ${
                 product.isInStock
                   ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
                   : 'bg-gray-200 text-gray-500 cursor-not-allowed'

@@ -1,4 +1,5 @@
 
+// models/Product.js
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
@@ -12,7 +13,7 @@ const productSchema = new mongoose.Schema({
   slug: {
     type: String,
     required: [true, "Slug is required"],
-    unique: true, // This automatically creates a unique index
+    unique: true,
     trim: true,
     lowercase: true
   },
@@ -86,7 +87,7 @@ const productSchema = new mongoose.Schema({
   sku: {
     type: String,
     required: [true, "SKU is required"],
-    unique: true, // This automatically creates a unique index
+    unique: true,
     trim: true,
     uppercase: true
   },
@@ -228,11 +229,12 @@ const productSchema = new mongoose.Schema({
   }
 
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 // Indexes for better performance
-// REMOVED: productSchema.index({ slug: 1 }); // Duplicate of unique: true on slug field
 productSchema.index({ name: 'text', description: 'text', brand: 'text', category: 'text' });
 productSchema.index({ category: 1, brand: 1 });
 productSchema.index({ status: 1, isFeatured: 1 });
@@ -245,7 +247,7 @@ productSchema.virtual('discountPercentage').get(function() {
   if (this.originalPrice && this.originalPrice > this.price) {
     return Math.round(((this.originalPrice - this.price) / this.originalPrice) * 100);
   }
-  return 0;
+  return this.discount || 0;
 });
 
 // Virtual for saving amount
@@ -256,20 +258,15 @@ productSchema.virtual('savingAmount').get(function() {
   return 0;
 });
 
-// Pre-save middleware to generate slug and handle stock status
-productSchema.pre('save', function(next) {
-  // Generate slug from name if not provided
-  if (!this.slug) {
-    this.slug = this.name
-      .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-  }
+// Virtual for published status (compatibility with existing code)
+productSchema.virtual('published').get(function() {
+  return this.status === 'published';
+});
 
+// ✅ SIMPLIFIED Pre-save middleware - No slug generation needed
+productSchema.pre('save', function(next) {
   // Auto-generate meta fields if not provided
-  if (!this.metaTitle) {
+  if (!this.metaTitle && this.name) {
     this.metaTitle = this.name.substring(0, 60);
   }
 
@@ -281,16 +278,95 @@ productSchema.pre('save', function(next) {
 
   // Update stock status
   this.isInStock = this.stock > 0;
-  if (this.stock === 0) {
+  if (this.stock === 0 && this.status !== 'archived') {
     this.status = "out_of_stock";
+  } else if (this.stock > 0 && this.status === 'out_of_stock') {
+    this.status = "published";
   }
+
+  // Set isOnSale based on pricing
+  this.isOnSale = (this.originalPrice && this.originalPrice > this.price) || this.discount > 0;
 
   // Set thumbnail from first image
   if (this.images.length > 0 && !this.thumbnail) {
-    this.thumbnail = this.images[0].url;
+    const primaryImage = this.images.find(img => img.isPrimary) || this.images[0];
+    this.thumbnail = primaryImage.url;
   }
 
   next();
 });
+
+// ✅ SIMPLIFIED Pre-update middleware - No slug regeneration needed
+productSchema.pre('findOneAndUpdate', function(next) {
+  const update = this.getUpdate();
+  
+  // Handle stock status updates
+  if (update.$set && update.$set.stock !== undefined) {
+    const isInStock = update.$set.stock > 0;
+    this.set({ isInStock });
+    
+    if (update.$set.stock === 0) {
+      this.set({ status: "out_of_stock" });
+    } else if (update.$set.stock > 0 && update.$set.status === 'out_of_stock') {
+      this.set({ status: "published" });
+    }
+  }
+
+  // Handle sale status
+  if ((update.$set && update.$set.originalPrice) || (update.$set && update.$set.price) || (update.$set && update.$set.discount)) {
+    const isOnSale = (update.$set.originalPrice && update.$set.originalPrice > update.$set.price) || 
+                    (update.$set.discount && update.$set.discount > 0);
+    this.set({ isOnSale });
+  }
+
+  next();
+});
+
+// ✅ Static method to find published products
+productSchema.statics.findPublished = function() {
+  return this.find({ status: 'published' });
+};
+
+// ✅ Static method to find featured products
+productSchema.statics.findFeatured = function() {
+  return this.find({ status: 'published', isFeatured: true });
+};
+
+// ✅ Static method to find products in stock
+productSchema.statics.findInStock = function() {
+  return this.find({ isInStock: true, status: 'published' });
+};
+
+// ✅ Instance method to update rating
+productSchema.methods.updateRating = function(newRating) {
+  if (newRating < 1 || newRating > 5) {
+    throw new Error('Rating must be between 1 and 5');
+  }
+
+  // Update distribution
+  this.rating.distribution[newRating] = (this.rating.distribution[newRating] || 0) + 1;
+  
+  // Recalculate average
+  const totalRatings = Object.values(this.rating.distribution).reduce((sum, count) => sum + count, 0);
+  const weightedSum = Object.entries(this.rating.distribution).reduce((sum, [rating, count]) => {
+    return sum + (parseInt(rating) * count);
+  }, 0);
+  
+  this.rating.average = weightedSum / totalRatings;
+  this.rating.count = totalRatings;
+  
+  return this.save();
+};
+
+// ✅ Instance method to increment view count
+productSchema.methods.incrementViewCount = function() {
+  this.viewCount += 1;
+  return this.save();
+};
+
+// ✅ Instance method to check if low stock
+productSchema.methods.isLowStock = function() {
+  return this.stock <= this.lowStockAlert;
+};
 
 export default mongoose.models.Product || mongoose.model("Product", productSchema);

@@ -4,6 +4,41 @@
 
 import { useState, useEffect } from "react";
 
+// ✅ Slug generation utilities
+const generateSlug = (text) => {
+  if (!text) return '';
+  
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars except hyphens
+    .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+    .replace(/^-+/, '')             // Trim - from start of text
+    .replace(/-+$/, '');            // Trim - from end of text
+};
+
+const generateProductSlug = (productName) => {
+  if (!productName) return '';
+  
+  // Common words to remove for shorter slugs
+  const wordsToRemove = [
+    'cn', 'compact', 'unit', 'module', 'series', 'version', 
+    'edition', 'basic', 'advanced', 'professional', 'controller'
+  ];
+  
+  const slug = generateSlug(productName);
+  
+  // Remove common redundant words for cleaner URLs
+  const parts = slug.split('-');
+  const filteredParts = parts.filter(part => 
+    !wordsToRemove.includes(part.toLowerCase())
+  );
+  
+  return filteredParts.join('-');
+};
+
 export default function ProductManagementTab() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,6 +53,9 @@ export default function ProductManagementTab() {
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [imageUrls, setImageUrls] = useState(['']); // For multiple image URLs
   const [thumbnailUrl, setThumbnailUrl] = useState(''); // For thumbnail URL
+
+  // ✅ NEW: Track if slug was manually edited
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   // Form state - expanded to match Product schema
   const [formData, setFormData] = useState({
@@ -76,6 +114,17 @@ export default function ProductManagementTab() {
     // Vendor
     vendor: ''
   });
+
+  // ✅ Auto-generate slug when name changes (only for new products)
+  useEffect(() => {
+    if (formData.name && !editingProduct && !slugManuallyEdited) {
+      const generatedSlug = generateProductSlug(formData.name);
+      setFormData(prev => ({
+        ...prev,
+        slug: generatedSlug
+      }));
+    }
+  }, [formData.name, editingProduct, slugManuallyEdited]);
 
   // Fetch products
   useEffect(() => {
@@ -155,101 +204,121 @@ export default function ProductManagementTab() {
     setImageUrls(newImageUrls);
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-
-  try {
-    // Process image URLs into the images array format
-    const processedImages = imageUrls
-      .filter(url => url.trim() !== '')
-      .map(url => ({
-        url: url.trim(),
-        alt: formData.name,
-        isPrimary: false
-      }));
-
-    // Set first image as primary if exists
-    if (processedImages.length > 0) {
-      processedImages[0].isPrimary = true;
-    }
-
-    const submitData = {
-      ...formData,
-      // ✅ ADD THIS: Include the createdBy field (use the same ID as your Arduino product)
-      createdBy: "6916ba84f8d28cd7a989ef1a", // Use the same ID from your existing product
-      
-      // Convert string numbers to actual numbers
-      price: parseFloat(formData.price),
-      originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-      discount: formData.discount ? parseFloat(formData.discount) : 0,
-      stock: parseInt(formData.stock),
-      lowStockAlert: parseInt(formData.lowStockAlert),
-      
-      // Images data
-      images: processedImages,
-      thumbnail: thumbnailUrl || (processedImages.length > 0 ? processedImages[0].url : ''),
-      
-      // Convert weight and dimensions
-      weight: {
-        ...formData.weight,
-        value: formData.weight.value ? parseFloat(formData.weight.value) : undefined
-      },
-      dimensions: {
-        ...formData.dimensions,
-        length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : undefined,
-        width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : undefined,
-        height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : undefined
-      },
-      
-      // Convert shipping cost
-      shipping: {
-        ...formData.shipping,
-        cost: formData.shipping.cost ? parseFloat(formData.shipping.cost) : 0
-      },
-      
-      // Ensure arrays are properly formatted
-      keywords: Array.isArray(formData.keywords) ? formData.keywords : [],
-      features: Array.isArray(formData.features) ? formData.features : [],
-      tags: Array.isArray(formData.tags) ? formData.tags : [],
-      specifications: formData.specifications || {}
-    };
-
-    const url = editingProduct 
-      ? `/api/products/${editingProduct._id}`
-      : '/api/products';
+  // ✅ Handle slug field changes
+  const handleSlugChange = (e) => {
+    const newSlug = e.target.value;
+    setFormData(prev => ({ ...prev, slug: newSlug }));
     
-    const method = editingProduct ? 'PUT' : 'POST';
-
-    console.log('🟢 Sending request to:', url);
-    console.log('🟢 Submit data:', submitData);
-
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(submitData)
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Something went wrong');
+    // If user manually edits the slug, stop auto-generation
+    if (newSlug !== generateProductSlug(formData.name)) {
+      setSlugManuallyEdited(true);
     }
+  };
 
-    if (data.success) {
-      await fetchProducts();
-      resetForm();
-      setShowAddForm(false);
-      setEditingProduct(null);
-      alert(editingProduct ? 'Product updated successfully!' : 'Product created successfully!');
+  // ✅ Regenerate slug manually
+  const regenerateSlug = () => {
+    if (formData.name) {
+      const newSlug = generateProductSlug(formData.name);
+      setFormData(prev => ({ ...prev, slug: newSlug }));
+      setSlugManuallyEdited(false);
     }
-  } catch (error) {
-    console.error('Error saving product:', error);
-    alert(`Error: ${error.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Process image URLs into the images array format
+      const processedImages = imageUrls
+        .filter(url => url.trim() !== '')
+        .map(url => ({
+          url: url.trim(),
+          alt: formData.name,
+          isPrimary: false
+        }));
+
+      // Set first image as primary if exists
+      if (processedImages.length > 0) {
+        processedImages[0].isPrimary = true;
+      }
+
+      const submitData = {
+        ...formData,
+        // ✅ ADD THIS: Include the createdBy field (use the same ID as your Arduino product)
+        createdBy: "6916ba84f8d28cd7a989ef1a", // Use the same ID from your existing product
+        
+        // Convert string numbers to actual numbers
+        price: parseFloat(formData.price),
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
+        discount: formData.discount ? parseFloat(formData.discount) : 0,
+        stock: parseInt(formData.stock),
+        lowStockAlert: parseInt(formData.lowStockAlert),
+        
+        // Images data
+        images: processedImages,
+        thumbnail: thumbnailUrl || (processedImages.length > 0 ? processedImages[0].url : ''),
+        
+        // Convert weight and dimensions
+        weight: {
+          ...formData.weight,
+          value: formData.weight.value ? parseFloat(formData.weight.value) : undefined
+        },
+        dimensions: {
+          ...formData.dimensions,
+          length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : undefined,
+          width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : undefined,
+          height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : undefined
+        },
+        
+        // Convert shipping cost
+        shipping: {
+          ...formData.shipping,
+          cost: formData.shipping.cost ? parseFloat(formData.shipping.cost) : 0
+        },
+        
+        // Ensure arrays are properly formatted
+        keywords: Array.isArray(formData.keywords) ? formData.keywords : [],
+        features: Array.isArray(formData.features) ? formData.features : [],
+        tags: Array.isArray(formData.tags) ? formData.tags : [],
+        specifications: formData.specifications || {}
+      };
+
+      const url = editingProduct 
+        ? `/api/products/${editingProduct._id}`
+        : '/api/products';
+      
+      const method = editingProduct ? 'PUT' : 'POST';
+
+      console.log('🟢 Sending request to:', url);
+      console.log('🟢 Submit data:', submitData);
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submitData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      if (data.success) {
+        await fetchProducts();
+        resetForm();
+        setShowAddForm(false);
+        setEditingProduct(null);
+        alert(editingProduct ? 'Product updated successfully!' : 'Product created successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -290,10 +359,12 @@ export default function ProductManagementTab() {
     setNewCategoryInput('');
     setImageUrls(['']);
     setThumbnailUrl('');
+    setSlugManuallyEdited(false); // ✅ Reset the manual edit flag
   };
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+    setSlugManuallyEdited(true); // Assume edited products have custom slugs
     
     // Set image URLs from product data
     if (product.images && product.images.length > 0) {
@@ -482,21 +553,48 @@ export default function ProductManagementTab() {
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                       className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="e.g., Simatic S7-200 CN CPU 224 Compact Unit"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Slug will be auto-generated from the product name
+                    </p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Slug *
+                      {!slugManuallyEdited && (
+                        <span className="ml-2 text-xs text-green-600">(Auto-generated)</span>
+                      )}
+                      {slugManuallyEdited && (
+                        <span className="ml-2 text-xs text-blue-600">(Custom)</span>
+                      )}
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.slug}
-                      onChange={(e) => setFormData({...formData, slug: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                      placeholder="product-name-slug"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        value={formData.slug}
+                        onChange={handleSlugChange}
+                        className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        placeholder="product-name-slug"
+                      />
+                      <button
+                        type="button"
+                        onClick={regenerateSlug}
+                        disabled={!formData.name}
+                        className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 disabled:opacity-50 text-sm whitespace-nowrap"
+                        title="Regenerate slug from product name"
+                      >
+                        🔄
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {slugManuallyEdited 
+                        ? "You're using a custom slug. Click the refresh button to auto-generate again."
+                        : "Edit manually if needed, or leave as-is for auto-generation."
+                      }
+                    </p>
                   </div>
 
                   <div className="md:col-span-2">
