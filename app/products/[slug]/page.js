@@ -84,7 +84,7 @@ export default async function ProductPage({ params }) {
   const reviewCount = product.rating?.count || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50">
       {/* Navigation Breadcrumb */}
       <nav className="bg-white/80 backdrop-blur-sm border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -175,7 +175,7 @@ export default async function ProductPage({ params }) {
           )}
 
           {/* Pricing */}
-          <div className="space-y-3 bg-gradient-to-r from-white to-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
+          <div className="space-y-3 bg-linear-to-r from-white to-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
             <p className="text-4xl font-bold text-slate-900">
               {product.currency} {product.price}
             </p>
@@ -184,7 +184,7 @@ export default async function ProductPage({ params }) {
                 <p className="line-through text-slate-500 text-xl font-medium">
                   {product.currency} {product.originalPrice}
                 </p>
-                <span className="bg-gradient-to-r from-red-500 to-pink-600 text-white text-sm px-4 py-2 rounded-full font-bold shadow-lg">
+                <span className="bg-linear-to-r from-red-500 to-pink-600 text-white text-sm px-4 py-2 rounded-full font-bold shadow-lg">
                   🎉 Save {discountPercentage}%
                 </span>
               </div>
@@ -194,8 +194,8 @@ export default async function ProductPage({ params }) {
           {/* Stock Status */}
           <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white ${
             product.isInStock 
-              ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg" 
-              : "bg-gradient-to-r from-red-500 to-rose-600 shadow-lg"
+              ? "bg-linear-to-r from-green-500 to-emerald-600 shadow-lg" 
+              : "bg-linear-to-r from-red-500 to-rose-600 shadow-lg"
           }`}>
             <span className="text-lg">
               {product.isInStock ? "✓" : "✗"}
@@ -227,7 +227,7 @@ export default async function ProductPage({ params }) {
                     key={i} 
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors duration-200"
                   >
-                    <span className="text-green-500 text-lg flex-shrink-0">✓</span>
+                    <span className="text-green-500 text-lg shrink-0">✓</span>
                     <span className="font-medium">{f}</span>
                   </li>
                 ))}
