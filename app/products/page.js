@@ -1,8 +1,44 @@
 
+// app/products/page.js
 import Link from 'next/link';
 import { Suspense } from 'react';
 import ProductsClient from './ProductsClient';
 import ProductsSkeleton from './ProductsSkeleton';
+
+// ✅ ADD METADATA FOR SEO
+export const metadata = {
+  title: "Products - Arduino, PLC & Electronics",
+  description: "Browse our complete range of Arduino boards, PLC systems, sensors, microcontrollers and electronic components in Sri Lanka. Best prices & fast delivery.",
+  
+  alternates: {
+    canonical: "https://www.sumaautomation.lk/products", // ✅ Points to itself, not homepage
+  },
+  
+  openGraph: {
+    title: "Electronics Products - Arduino & PLC Components",
+    description: "Complete range of Arduino boards, PLC systems, sensors and automation components in Sri Lanka.",
+    url: "https://www.sumaautomation.lk/products",
+    images: [
+      {
+        url: "https://www.sumaautomation.lk/title.jpg",
+        width: 1200,
+        height: 630,
+        alt: "sumaautomation - Electronics Products Catalog",
+      },
+    ],
+  },
+  
+  twitter: {
+    card: "summary_large_image",
+    title: "Electronics Products - Arduino & PLC",
+    description: "Browse Arduino boards, PLC systems and automation components in Sri Lanka.",
+  },
+  
+  robots: {
+    index: true,
+    follow: true,
+  }
+};
 
 // Server component that fetches data
 async function ProductsGrid() {
