@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -10,13 +11,21 @@ export default function ProductCard({ product }) {
 
     const rating = typeof product.rating === 'number' ? product.rating : 0;
 
-    // ✅ PRODUCT STRUCTURED DATA - Add this block
+    // ✅ FIXED: Image URL validation function
+    const getValidImageUrl = (url) => {
+        if (!url || url.startsWith('data:')) {
+            return "https://www.sumaautomation.lk/title.jpg";
+        }
+        return url;
+    };
+
+    // ✅ PRODUCT STRUCTURED DATA - Fixed image URL + Added non-critical optional fields
     const productStructuredData = {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": product.name,
         "description": product.shortDescription || product.description || `Buy ${product.name} in Sri Lanka`,
-        "image": product.thumbnail || product.images?.[0]?.url || '/placeholder-product.jpg',
+        "image": getValidImageUrl(product.thumbnail || product.images?.[0]?.url),
         "sku": product.sku || product._id,
         "brand": {
             "@type": "Brand",
@@ -28,6 +37,40 @@ export default function ProductCard({ product }) {
             "priceCurrency": product.currency || "LKR",
             "availability": product.isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            // ✅ ADDED: Shipping details (non-critical optional field)
+            "shippingDetails": {
+                "@type": "OfferShippingDetails",
+                "shippingRate": {
+                    "@type": "MonetaryAmount",
+                    "value": "0",
+                    "currency": "LKR"
+                },
+                "shippingDestination": {
+                    "@type": "DefinedRegion",
+                    "addressCountry": "LK"
+                },
+                "deliveryTime": {
+                    "@type": "ShippingDeliveryTime",
+                    "handlingTime": {
+                        "@type": "QuantitativeValue",
+                        "minValue": "1",
+                        "maxValue": "2"
+                    },
+                    "transitTime": {
+                        "@type": "QuantitativeValue", 
+                        "minValue": "3",
+                        "maxValue": "7"
+                    }
+                }
+            },
+            // ✅ ADDED: Return policy (non-critical optional field)
+            "hasMerchantReturnPolicy": {
+                "@type": "MerchantReturnPolicy",
+                "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+                "merchantReturnDays": 14,
+                "returnMethod": "https://schema.org/ReturnByMail",
+                "returnFees": "https://schema.org/FreeReturn"
+            },
             ...(product.originalPrice && product.originalPrice > product.price && {
                 "priceSpecification": {
                     "@type": "PriceSpecification",
@@ -53,9 +96,12 @@ export default function ProductCard({ product }) {
         }
     };
 
+    // ✅ FIXED: Get valid image URL for display
+    const displayImageUrl = getValidImageUrl(product.thumbnail || product.images?.[0]?.url);
+
     return (
         <div className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-            {/* ✅ ADD STRUCTURED DATA SCRIPT - Add this line */}
+            {/* ✅ STRUCTURED DATA SCRIPT */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(productStructuredData) }}
@@ -65,7 +111,7 @@ export default function ProductCard({ product }) {
                 {/* Compact Image */}
                 <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
                     <Image
-                        src={product.thumbnail || product.images?.[0]?.url || '/placeholder-product.jpg'}
+                        src={displayImageUrl}
                         alt={product.name}
                         width={200}
                         height={150}
@@ -97,10 +143,11 @@ export default function ProductCard({ product }) {
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <svg
                                         key={star}
-                                        className={`w-3 h-3 ${star <= Math.floor(rating)
+                                        className={`w-3 h-3 ${
+                                            star <= Math.floor(rating)
                                                 ? 'text-yellow-400 fill-current'
                                                 : 'text-gray-300'
-                                            }`}
+                                        }`}
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
@@ -135,16 +182,16 @@ export default function ProductCard({ product }) {
 
                         {/* Add to Cart Button */}
                         <button
-                            className={`shrink-0 px-3 py-2 rounded text-sm font-semibold transition-all duration-150 whitespace-nowrap ${product.isInStock
+                            className={`shrink-0 px-3 py-2 rounded text-sm font-semibold transition-all duration-150 whitespace-nowrap ${
+                                product.isInStock
                                     ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
                                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                }`}
+                            }`}
                             disabled={!product.isInStock}
                             onClick={handleAddToCart}
                         >
                             {product.isInStock ? 'Add to Cart' : 'Out of Stock'}
                         </button>
-
                     </div>
 
                     {/* Stock Status - Very subtle */}
