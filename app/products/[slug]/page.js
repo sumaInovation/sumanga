@@ -222,7 +222,7 @@ function generateProductSchema(product, slug) {
       "bestRating": "5",
       "worstRating": "1"
     },
-    // ✅ COMPLETE: Includes all recommended fields
+    // ✅ COMPLETE: Includes all recommended fields with corrections
     "offers": {
       "@type": "Offer",
       "price": product.price?.toString() || "0",
@@ -235,7 +235,7 @@ function generateProductSchema(product, slug) {
         "name": "Suma Automation",
         "url": baseUrl
       },
-      // ✅ ADDED: Shipping details for Sri Lanka
+      // ✅ CORRECTED: Shipping details with unitCode
       "shippingDetails": {
         "@type": "OfferShippingDetails",
         "shippingRate": {
@@ -252,22 +252,25 @@ function generateProductSchema(product, slug) {
           "handlingTime": {
             "@type": "QuantitativeValue",
             "minValue": "1",
-            "maxValue": "2"
+            "maxValue": "2",
+            "unitCode": "DAY" // ✅ ADDED: unitCode for days
           },
           "transitTime": {
             "@type": "QuantitativeValue", 
             "minValue": "3",
-            "maxValue": "7"
+            "maxValue": "7",
+            "unitCode": "DAY" // ✅ ADDED: unitCode for days
           }
         }
       },
-      // ✅ ADDED: Return policy
+      // ✅ CORRECTED: Return policy with applicableCountry
       "hasMerchantReturnPolicy": {
         "@type": "MerchantReturnPolicy",
         "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
         "merchantReturnDays": 14,
         "returnMethod": "https://schema.org/ReturnByMail",
-        "returnFees": "https://schema.org/FreeReturn"
+        "returnFees": "https://schema.org/FreeReturn",
+        "applicableCountry": "LK" // ✅ ADDED: applicable country
       }
     }
   };
