@@ -1,3 +1,4 @@
+
 // app/admin/courses/page.js
 'use client';
 
@@ -16,11 +17,28 @@ export default function AdminCoursesPage() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/admin/courses');
-      if (response.ok) {
-        const data = await response.json();
-        setCourses(data.courses || []);
-      }
+      // For now, using mock data - replace with actual API call
+      const mockCourses = [
+        {
+          id: 1,
+          title: 'Basic PLC Programming',
+          slug: 'basic-plc-programming',
+          level: 'beginner',
+          price: 15000,
+          featured: true,
+          image: ''
+        },
+        {
+          id: 2,
+          title: 'Advanced PLC Programming',
+          slug: 'advanced-plc-programming',
+          level: 'advanced',
+          price: 25000,
+          featured: false,
+          image: ''
+        }
+      ];
+      setCourses(mockCourses);
     } catch (error) {
       console.error('Error fetching courses:', error);
     } finally {
@@ -32,15 +50,8 @@ export default function AdminCoursesPage() {
     if (!confirm('Are you sure you want to delete this course?')) return;
 
     try {
-      const response = await fetch(`/api/admin/courses/${courseId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setCourses(courses.filter(course => course.id !== courseId));
-      } else {
-        alert('Failed to delete course');
-      }
+      // Mock delete - replace with actual API call
+      setCourses(courses.filter(course => course.id !== courseId));
     } catch (error) {
       console.error('Error deleting course:', error);
     }
@@ -140,7 +151,7 @@ export default function AdminCoursesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    LKR {course.price}
+                    LKR {course.price?.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {course.featured ? (
