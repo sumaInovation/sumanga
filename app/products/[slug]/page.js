@@ -191,6 +191,14 @@ export async function generateMetadata({ params }) {
 function generateProductSchema(product, slug) {
   const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
   
+  // ✅ FIX: Ensure positive values and valid ranges
+  const ratingValue = product.rating?.average || 0;
+  const reviewCount = product.rating?.count || 0;
+  
+  // Ensure rating is between 1-5 and reviewCount is positive
+  const safeRatingValue = Math.max(1, Math.min(5, ratingValue)); // Clamp between 1-5
+  const safeReviewCount = Math.max(1, reviewCount); // Minimum 1 review
+  
   const schema = {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -203,11 +211,13 @@ function generateProductSchema(product, slug) {
       "@type": "Brand",
       "name": product.brand || "Suma Automation"
     },
-    // ✅ REQUIRED: For star ratings and review count
+    // ✅ FIXED: Use safe values that meet Google's requirements
     "aggregateRating": {
       "@type": "AggregateRating", 
-      "ratingValue": (product.rating?.average || 0).toString(),
-      "reviewCount": (product.rating?.count || 0).toString()
+      "ratingValue": safeRatingValue.toString(),
+      "reviewCount": safeReviewCount.toString(),
+      "bestRating": "5",
+      "worstRating": "1"
     },
     // ✅ REQUIRED: For price and availability
     "offers": {
