@@ -1,3 +1,4 @@
+
 // models/Review.js
 import mongoose from "mongoose";
 
@@ -14,6 +15,22 @@ const reviewSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, "User ID is required"]
+  },
+  
+  // ✅ SAVE USER INFO DIRECTLY IN REVIEW
+  userInfo: {
+    name: {
+      type: String,
+      required: true
+    },
+    image: {
+      type: String,
+      default: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM2QjcyODAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iI0ZGRkZGRiIvPgo8cGF0aCBkPSJNMTYgMThDMTAgMTggNiAyMSA2IDI2SDI2QzI2IDIxIDIyIDE4IDE2IDE4WiIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4K"
+    },
+    email: {
+      type: String,
+      required: true
+    }
   },
   
   // Rating (1-5 stars)
@@ -55,16 +72,6 @@ const reviewSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     }]
-  },
-  
-  // Admin response
-  adminReply: {
-    text: String,
-    repliedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    repliedAt: Date
   }
 
 }, {
@@ -84,7 +91,6 @@ reviewSchema.statics.getProductReviews = function(productId, status = "approved"
     product: productId, 
     status: status 
   })
-  .populate('user', 'name email')
   .sort({ createdAt: -1 });
 };
 

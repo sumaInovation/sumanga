@@ -1,17 +1,19 @@
 
-
 // app/products/[slug]/page.js
 import { getProductSlugsForSitemap } from '@/lib/products-data';
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { ReviewForm } from './ReviewForm';
 
 // Generate static paths for all products
 export async function generateStaticParams() {
   try {
     const products = await getProductSlugsForSitemap();
     
-    console.log(`📄 Generating static pages for ${products.length} products`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📄 Generating static pages for ${products.length} products`);
+    }
     
     return products.map((product) => ({
       slug: product.slug,
@@ -22,12 +24,14 @@ export async function generateStaticParams() {
   }
 }
 
-// Fetch product data
+// Fetch product data with reviews
 async function getProduct(slug) {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     
-    console.log(`🔍 Fetching product: ${slug}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔍 Fetching product: ${slug}`);
+    }
 
     const res = await fetch(`${baseUrl}/api/products/slug/${slug}`, {
       method: 'GET',
@@ -38,17 +42,59 @@ async function getProduct(slug) {
     });
 
     if (!res.ok) {
-      console.log(`❌ API responded with status: ${res.status} for slug: ${slug}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`❌ API responded with status: ${res.status} for slug: ${slug}`);
+      }
       return null;
     }
 
     const data = await res.json();
     
     if (data.success && data.product) {
-      console.log(`✅ Product found: ${data.product.name}`);
-      return data.product;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Product found: ${data.product.name}`);
+      }
+      
+      // ✅ Fetch real reviews for this product
+      let reviews = [];
+      try {
+        const reviewsRes = await fetch(`${baseUrl}/api/products/${data.product._id}/reviews`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: "no-store",
+        });
+
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          reviews = reviewsData.reviews || [];
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ Fetched ${reviews.length} reviews for product`);
+            // Debug: log user data from NEW schema
+            reviews.forEach((review, index) => {
+              console.log(`👤 Review ${index + 1} - UserInfo:`, {
+                name: review.userInfo?.name,
+                image: review.userInfo?.image,
+                email: review.userInfo?.email
+              });
+            });
+          }
+        }
+      } catch (reviewError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ Could not fetch reviews, using empty array:', reviewError.message);
+        }
+      }
+
+      return {
+        ...data.product,
+        reviews: reviews
+      };
     } else {
-      console.log(`❌ Product not found in response for slug: ${slug}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`❌ Product not found in response for slug: ${slug}`);
+      }
       return null;
     }
   } catch (error) {
@@ -107,7 +153,6 @@ export async function generateMetadata({ params }) {
             alt: `${product.name} - Sumaautomation Sri Lanka`,
           },
         ],
-        // ✅ FIX: Use 'website' instead of 'product'
         type: 'website',
         siteName: 'Sumaautomation',
         locale: 'en_LK',
@@ -142,7 +187,7 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Product Schema for rich results
+// Product Schema for rich results with REAL reviews
 function generateProductSchema(product, slug) {
   const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
   
@@ -156,7 +201,7 @@ function generateProductSchema(product, slug) {
     "mpn": product.sku || `SA-${slug}`,
     "brand": {
       "@type": "Brand",
-      "name": product.brand || "Sumaautomation"
+      "name": product.brand || "Suma Automation"
     },
     "offers": {
       "@type": "Offer",
@@ -167,29 +212,233 @@ function generateProductSchema(product, slug) {
       "availability": product.isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "seller": {
         "@type": "Organization",
-        "name": "Sumaautomation",
+        "name": "Suma Automation",
         "url": baseUrl
       }
     }
   };
 
-  // Add rating if available
-  if (product.rating?.average && product.rating.average > 0) {
+  // ✅ COMPLETE FIX: Add both aggregateRating AND real review entities
+  const hasReviews = product.reviews && product.reviews.length > 0;
+  const hasValidRating = product.rating?.average && product.rating.average > 0 && product.rating.count > 0;
+
+  // Only add rating schema if we have valid rating data AND real reviews
+  if (hasValidRating && hasReviews) {
+    // 1. Aggregate Rating (required)
     schema.aggregateRating = {
       "@type": "AggregateRating",
       "ratingValue": product.rating.average.toString(),
-      "reviewCount": product.rating.count.toString()
+      "reviewCount": product.rating.count.toString(),
+      "bestRating": "5",
+      "worstRating": "1"
     };
+
+    // 2. Individual Reviews (using REAL data from your database with NEW userInfo field)
+    schema.review = product.reviews.slice(0, 10).map(review => ({
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": review.userInfo?.name || "Verified Customer"  // ✅ FIXED: Use userInfo instead of author
+      },
+      "datePublished": review.createdAt ? new Date(review.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      "reviewBody": review.comment || `Review of ${product.name}`,
+      "name": review.title || `Review of ${product.name}`,
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": review.rating.toString(),
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    }));
   }
 
   return schema;
 }
 
-// Main page component
+// Safe Image Component (without event handlers for Server Components)
+function SafeImage({ src, alt, className, sizes, priority = false }) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className={className}
+      priority={priority}
+      sizes={sizes}
+    />
+  );
+}
+
+// ✅ SIMPLE Avatar Component without event handlers (Server Component safe)
+function UserAvatar({ userInfo, size = "md" }) {
+  const sizeClasses = {
+    sm: "w-8 h-8",
+    md: "w-10 h-10",
+    lg: "w-12 h-12"
+  };
+
+  const textSizes = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base"
+  };
+
+  // Get user initials for fallback
+  const getInitials = (name) => {
+    if (!name) return "CU";
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Get color based on name for consistent avatar colors
+  const getColor = (name) => {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 
+      'bg-red-500', 'bg-yellow-500', 'bg-indigo-500',
+      'bg-pink-500', 'bg-teal-500'
+    ];
+    const index = name?.length % colors.length || 0;
+    return colors[index];
+  };
+
+  const userName = userInfo?.name || "Customer";
+  const userImage = userInfo?.image;
+
+  // Simple approach: Show image if available, otherwise show initials
+  // No event handlers in Server Components
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      {userImage ? (
+        // Simple img tag without onError handler
+        <img
+          src={userImage}
+          alt={userName}
+          className={`${sizeClasses[size]} rounded-full object-cover border-2 border-gray-200`}
+        />
+      ) : (
+        // Fallback with initials
+        <div
+          className={`${sizeClasses[size]} rounded-full ${getColor(userName)} flex items-center justify-center text-white font-semibold ${textSizes[size]} border-2 border-gray-200`}
+        >
+          {getInitials(userName)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ✅ UPDATED Review Item Component
+function ReviewItem({ review }) {
+  const renderStars = (rating) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            className={`text-lg ${
+              star <= rating ? "text-yellow-400" : "text-gray-300"
+            }`}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-LK', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+      {/* User Info Header with Avatar */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          {/* ✅ FIXED: Use userInfo instead of author */}
+          <UserAvatar userInfo={review.userInfo} size="md" />
+          
+          {/* User Name and Rating */}
+          <div>
+            <p className="font-semibold text-gray-900">
+              {review.userInfo?.name || "Customer"} {/* ✅ FIXED */}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1">
+                {renderStars(review.rating)}
+              </div>
+              <span className="text-gray-900 font-semibold text-sm">
+                {review.rating}.0
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Review Date */}
+        <span className="text-sm text-gray-500">
+          {formatDate(review.createdAt)}
+        </span>
+      </div>
+      
+      {/* Review Title */}
+      {review.title && (
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+          {review.title}
+        </h3>
+      )}
+      
+      {/* Review Comment */}
+      <p className="text-gray-700 mb-4 leading-relaxed">{review.comment}</p>
+      
+      {/* Review Actions */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4 text-sm text-gray-500">
+          {review.helpful?.count > 0 && (
+            <span>
+              {review.helpful.count} people found this helpful
+            </span>
+          )}
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium">
+            Helpful
+          </button>
+          <button className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            Report
+          </button>
+        </div>
+      </div>
+      
+      {/* Admin Response */}
+      {review.adminReply && (
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-blue-600 font-semibold">Admin Response</span>
+            <span className="text-blue-500 text-sm">
+              {formatDate(review.adminReply.repliedAt)}
+            </span>
+          </div>
+          <p className="text-blue-700">{review.adminReply.text}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Main page component
 export default async function ProductPage({ params }) {
   let product;
-  let slug; // ✅ Declare slug at the top level
+  let slug;
   
   try {
     // ✅ Get the slug from params
@@ -208,7 +457,19 @@ export default async function ProductPage({ params }) {
       return notFound();
     }
 
-    console.log(`✅ Rendering product page for: ${product.name}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Rendering product page for: ${product.name}`);
+      console.log(`📊 Found ${product.reviews?.length || 0} reviews`);
+      // Debug: Check review structure
+      if (product.reviews && product.reviews.length > 0) {
+        console.log('🔍 Sample review structure:', {
+          id: product.reviews[0]._id,
+          userInfo: product.reviews[0].userInfo,
+          rating: product.reviews[0].rating,
+          comment: product.reviews[0].comment
+        });
+      }
+    }
 
   } catch (error) {
     console.error('❌ Error in ProductPage:', error);
@@ -225,7 +486,7 @@ export default async function ProductPage({ params }) {
   const hasImages = product.images && product.images.length > 0;
   const primaryImage = product.thumbnail || product.images?.[0]?.url || "/images/placeholder-product.jpg";
 
-  // ✅ Now slug is available in this scope
+  // ✅ Generate schema with real reviews
   const productSchema = generateProductSchema(product, slug);
 
   return (
@@ -270,12 +531,11 @@ export default async function ProductPage({ params }) {
             {/* Main Image */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
               <div className="aspect-square relative">
-                <Image
+                <SafeImage
                   src={primaryImage}
                   alt={product.name}
-                  fill
                   className="object-cover"
-                  priority
+                  priority={true}
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>
@@ -289,10 +549,9 @@ export default async function ProductPage({ params }) {
                     key={index}
                     className="aspect-square relative border-2 border-gray-200 rounded-lg bg-white overflow-hidden hover:border-blue-500 transition-all duration-200 cursor-pointer"
                   >
-                    <Image
+                    <SafeImage
                       src={img.url}
                       alt={`${product.name} - View ${index + 1}`}
-                      fill
                       className="object-cover"
                       sizes="(max-width: 768px) 25vw, 12.5vw"
                     />
@@ -371,7 +630,10 @@ export default async function ProductPage({ params }) {
               >
                 {product.isInStock ? "Add to Cart" : "Out of Stock"}
               </button>
-              <button className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+              <button 
+                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                aria-label="Add to wishlist"
+              >
                 ♡
               </button>
             </div>
@@ -413,6 +675,86 @@ export default async function ProductPage({ params }) {
                     </div>
                   ))}
                 </dl>
+              </div>
+            )}
+
+            {/* ✅ REVIEW FORM SECTION - Always show the review form */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <ReviewForm productId={product._id} productName={product.name} />
+            </div>
+
+            {/* ✅ UPDATED REAL REVIEWS SECTION WITH CORRECT userInfo FIELD */}
+            {product.reviews && product.reviews.length > 0 && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Customer Reviews ({product.reviews.length})
+                  </h2>
+                  {rating > 0 && (
+                    <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
+                      <span className="text-yellow-400 text-xl">★</span>
+                      <span className="text-gray-900 font-bold text-lg">{rating.toFixed(1)}</span>
+                      <span className="text-gray-600">out of 5</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Reviews Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900">Rating Breakdown</h3>
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const starCount = product.reviews.filter(r => r.rating === star).length;
+                      const percentage = (starCount / product.reviews.length) * 100;
+                      return (
+                        <div key={star} className="flex items-center gap-3">
+                          <span className="text-sm text-gray-600 w-8">{star} ★</span>
+                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-yellow-400 h-2 rounded-full" 
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-500 w-12">({starCount})</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">Review Highlights</h3>
+                    <div className="flex items-center gap-2 text-green-600">
+                      <span>✓</span>
+                      <span>{product.reviews.filter(r => r.rating >= 4).length} positive reviews</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <span>💬</span>
+                      <span>{product.reviews.filter(r => r.comment && r.comment.length > 50).length} detailed reviews</span>
+                    </div>
+                    {product.reviews.some(r => r.adminReply) && (
+                      <div className="flex items-center gap-2 text-purple-600">
+                        <span>👨‍💼</span>
+                        <span>{product.reviews.filter(r => r.adminReply).length} admin responses</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Individual Reviews with User Avatars */}
+                <div className="space-y-6">
+                  {product.reviews.map((review) => (
+                    <ReviewItem key={review._id} review={review} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No Reviews Message - Only show if there are no reviews */}
+            {(!product.reviews || product.reviews.length === 0) && (
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 text-center">
+                <div className="text-gray-400 text-6xl mb-4">💬</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Reviews Yet</h3>
+                <p className="text-gray-600">Be the first to share your experience with this product!</p>
               </div>
             )}
           </div>
