@@ -52,20 +52,51 @@ export async function POST(request) {
     const productData = await request.json();
     console.log('📦 Product data received:', productData);
 
-    // ✅ NO NEED TO GENERATE SLUG MANUALLY - Model handles it automatically
-    // Just remove slug from data if provided, let model generate it
-    if (productData.slug) {
-      delete productData.slug; // Let model generate a clean one
+    // ✅ FIX: DON'T delete the slug - use what's provided or generate one
+    if (!productData.slug || productData.slug.trim() === '') {
+      // Generate slug from name if not provided
+      if (productData.name) {
+        productData.slug = generateSlug(productData.name);
+      } else {
+        return new Response(JSON.stringify({ 
+          error: 'Product name is required to generate slug'
+        }), { 
+          status: 400 
+        });
+      }
     }
 
-    // Generate SKU if not provided (keep your existing logic)
+    // Clean the slug
+    productData.slug = productData.slug
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+
+    // ✅ Check for duplicate slug and make it unique
+    let finalSlug = productData.slug;
+    let counter = 1;
+    
+    while (await Product.findOne({ slug: finalSlug })) {
+      finalSlug = `${productData.slug}-${counter}`;
+      counter++;
+    }
+    
+    productData.slug = finalSlug;
+
+    // Generate SKU if not provided
     if (!productData.sku) {
       productData.sku = `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }
 
+    console.log('🔗 Final slug being saved:', productData.slug);
+
     const product = await Product.create(productData);
     console.log('✅ Product created:', product._id);
-    console.log('🔗 Auto-generated slug:', product.slug);
+    console.log('🔗 Slug saved:', product.slug);
 
     return new Response(JSON.stringify({
       success: true,
@@ -80,6 +111,30 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('❌ POST /api/products ERROR:', error);
+    
+    // Handle specific errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => ({
+        field: err.path,
+        message: err.message
+      }));
+      
+      return new Response(JSON.stringify({ 
+        error: 'Validation failed',
+        details: errors
+      }), { 
+        status: 400 
+      });
+    }
+    
+    if (error.code === 11000) {
+      return new Response(JSON.stringify({ 
+        error: 'Slug or SKU already exists'
+      }), { 
+        status: 400 
+      });
+    }
+
     return new Response(JSON.stringify({ 
       error: error.message,
       code: error.code
@@ -90,6 +145,19 @@ export async function POST(request) {
       }
     });
   }
+}
+
+// ✅ Add slug generation helper function
+function generateSlug(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 
 // ✅ ADD PUT METHOD FOR UPDATING PRODUCTS
@@ -109,9 +177,20 @@ export async function PUT(request) {
       });
     }
 
-    // ✅ Remove slug if name is being updated - model will regenerate it
-    if (updateData.name && updateData.slug) {
-      delete updateData.slug; // Let model regenerate based on new name
+    // ✅ FIX: Only regenerate slug if name is being updated
+    if (updateData.name && (!updateData.slug || updateData.slug.trim() === '')) {
+      updateData.slug = generateSlug(updateData.name);
+      
+      // Make slug unique
+      let finalSlug = updateData.slug;
+      let counter = 1;
+      
+      while (await Product.findOne({ slug: finalSlug, _id: { $ne: _id } })) {
+        finalSlug = `${updateData.slug}-${counter}`;
+        counter++;
+      }
+      
+      updateData.slug = finalSlug;
     }
 
     const product = await Product.findByIdAndUpdate(
