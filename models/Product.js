@@ -263,7 +263,14 @@ productSchema.virtual('published').get(function() {
   return this.status === 'published';
 });
 
-// ✅ SIMPLIFIED Pre-save middleware - No slug generation needed
+// Virtual for reviews (populate reviews)
+productSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'product'
+});
+
+// ✅ SIMPLIFIED Pre-save middleware
 productSchema.pre('save', function(next) {
   // Auto-generate meta fields if not provided
   if (!this.metaTitle && this.name) {
@@ -296,7 +303,7 @@ productSchema.pre('save', function(next) {
   next();
 });
 
-// ✅ SIMPLIFIED Pre-update middleware - No slug regeneration needed
+// ✅ SIMPLIFIED Pre-update middleware
 productSchema.pre('findOneAndUpdate', function(next) {
   const update = this.getUpdate();
   
@@ -337,7 +344,48 @@ productSchema.statics.findInStock = function() {
   return this.find({ isInStock: true, status: 'published' });
 };
 
-// ✅ Instance method to update rating
+// ✅ Static method to get products with reviews
+productSchema.statics.getProductsWithReviews = function(query = {}) {
+  return this.find({ 
+    ...query, 
+    status: 'published' 
+  })
+  .populate({
+    path: 'reviews',
+    match: { status: 'approved' },
+    options: { sort: { createdAt: -1 }, limit: 5 }
+  })
+  .sort({ createdAt: -1 });
+};
+
+// ✅ Static method to update ratings for multiple products
+productSchema.statics.updateProductsRating = async function(productIds) {
+  const Review = mongoose.model('Review');
+  
+  for (const productId of productIds) {
+    const ratingData = await Review.calculateProductRating(productId);
+    await this.findByIdAndUpdate(productId, { rating: ratingData });
+  }
+};
+
+// ✅ Instance method to update rating from reviews
+productSchema.methods.updateRatingFromReviews = async function() {
+  try {
+    const Review = mongoose.model('Review');
+    const ratingData = await Review.calculateProductRating(this._id);
+    
+    this.rating = ratingData;
+    await this.save();
+    
+    console.log(`✅ Updated rating for product ${this.name}:`, ratingData);
+    return ratingData;
+  } catch (error) {
+    console.error('❌ Error updating rating from reviews:', error);
+    throw error;
+  }
+};
+
+// ✅ Instance method to add a single rating (backward compatibility)
 productSchema.methods.updateRating = function(newRating) {
   if (newRating < 1 || newRating > 5) {
     throw new Error('Rating must be between 1 and 5');
@@ -352,10 +400,68 @@ productSchema.methods.updateRating = function(newRating) {
     return sum + (parseInt(rating) * count);
   }, 0);
   
-  this.rating.average = weightedSum / totalRatings;
+  this.rating.average = totalRatings > 0 ? weightedSum / totalRatings : 0;
   this.rating.count = totalRatings;
   
   return this.save();
+};
+
+// ✅ Instance method to get approved reviews
+productSchema.methods.getApprovedReviews = function(limit = 10, page = 1) {
+  const Review = mongoose.model('Review');
+  const skip = (page - 1) * limit;
+  
+  return Review.find({ 
+    product: this._id, 
+    status: 'approved' 
+  })
+  .populate('user', 'name email')
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(limit);
+};
+
+// ✅ Instance method to get review statistics
+productSchema.methods.getReviewStats = async function() {
+  const Review = mongoose.model('Review');
+  
+  const stats = await Review.aggregate([
+    {
+      $match: { 
+        product: this._id,
+        status: 'approved'
+      }
+    },
+    {
+      $group: {
+        _id: '$product',
+        totalReviews: { $sum: 1 },
+        averageRating: { $avg: '$rating' },
+        ratingCounts: {
+          $push: '$rating'
+        }
+      }
+    }
+  ]);
+
+  if (stats.length > 0) {
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    stats[0].ratingCounts.forEach(rating => {
+      distribution[rating] = (distribution[rating] || 0) + 1;
+    });
+
+    return {
+      totalReviews: stats[0].totalReviews,
+      averageRating: Math.round(stats[0].averageRating * 10) / 10,
+      distribution: distribution
+    };
+  }
+
+  return {
+    totalReviews: 0,
+    averageRating: 0,
+    distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  };
 };
 
 // ✅ Instance method to increment view count
@@ -364,9 +470,63 @@ productSchema.methods.incrementViewCount = function() {
   return this.save();
 };
 
+// ✅ Instance method to increment purchase count
+productSchema.methods.incrementPurchaseCount = function(quantity = 1) {
+  this.purchaseCount += quantity;
+  this.stock = Math.max(0, this.stock - quantity);
+  
+  // Update stock status
+  this.isInStock = this.stock > 0;
+  if (this.stock === 0 && this.status !== 'archived') {
+    this.status = "out_of_stock";
+  }
+  
+  return this.save();
+};
+
+// ✅ Instance method to increment wishlist count
+productSchema.methods.incrementWishlistCount = function() {
+  this.wishlistCount += 1;
+  return this.save();
+};
+
+// ✅ Instance method to decrement wishlist count
+productSchema.methods.decrementWishlistCount = function() {
+  this.wishlistCount = Math.max(0, this.wishlistCount - 1);
+  return this.save();
+};
+
 // ✅ Instance method to check if low stock
 productSchema.methods.isLowStock = function() {
   return this.stock <= this.lowStockAlert;
+};
+
+// ✅ Instance method to get similar products
+productSchema.methods.getSimilarProducts = function(limit = 4) {
+  return this.constructor.find({
+    _id: { $ne: this._id },
+    category: this.category,
+    status: 'published',
+    isInStock: true
+  })
+  .select('name slug price thumbnail rating brand')
+  .limit(limit)
+  .sort({ 'rating.average': -1, createdAt: -1 });
+};
+
+// ✅ CHANGE TO THIS (no warning):
+productSchema.methods.isRecentlyAdded = function() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  return this.createdAt > thirtyDaysAgo;
+};
+
+// ✅ Instance method to get product availability status
+productSchema.methods.getAvailabilityStatus = function() {
+  if (this.status === 'archived') return 'archived';
+  if (this.stock === 0) return 'out_of_stock';
+  if (this.stock <= this.lowStockAlert) return 'low_stock';
+  return 'in_stock';
 };
 
 export default mongoose.models.Product || mongoose.model("Product", productSchema);

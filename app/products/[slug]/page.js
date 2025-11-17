@@ -1,4 +1,5 @@
 
+
 // app/products/[slug]/page.js
 import { getProductSlugsForSitemap } from '@/lib/products-data';
 import { notFound } from "next/navigation";
@@ -21,18 +22,12 @@ export async function generateStaticParams() {
   }
 }
 
-// Fetch product data with better caching and error handling
+// Fetch product data
 async function getProduct(slug) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     
-    if (!baseUrl) {
-      console.error('NEXT_PUBLIC_BASE_URL is not defined');
-      return null;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // Reduced timeout
+    console.log(`🔍 Fetching product: ${slug}`);
 
     const res = await fetch(`${baseUrl}/api/products/slug/${slug}`, {
       method: 'GET',
@@ -40,50 +35,38 @@ async function getProduct(slug) {
         'Content-Type': 'application/json',
       },
       cache: "no-store",
-      signal: controller.signal,
-      next: { 
-        tags: [`product-${slug}`] // For revalidation
-      }
     });
 
-    clearTimeout(timeoutId);
-
     if (!res.ok) {
-      if (res.status === 404) {
-        console.warn(`Product not found for slug: ${slug}`);
-      } else {
-        console.error(`API responded with status: ${res.status} for slug: ${slug}`);
-      }
+      console.log(`❌ API responded with status: ${res.status} for slug: ${slug}`);
       return null;
     }
 
     const data = await res.json();
-    return data.product || null;
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      console.error('Request timeout fetching product:', slug);
+    
+    if (data.success && data.product) {
+      console.log(`✅ Product found: ${data.product.name}`);
+      return data.product;
     } else {
-      console.error('Error fetching product:', error);
+      console.log(`❌ Product not found in response for slug: ${slug}`);
+      return null;
     }
+  } catch (error) {
+    console.error('❌ Error fetching product:', error.message);
     return null;
   }
 }
 
 // Enhanced metadata for better SEO
-// Dynamic metadata for SEO - CORRECTED VERSION
 export async function generateMetadata({ params }) {
   try {
-    const resolvedParams = await params;
-    const slug = resolvedParams.slug;
+    // ✅ FIX: Await params
+    const { slug } = await params;
 
     if (!slug) {
       return {
-        title: "Product Not Found | sumaautomation",
+        title: "Product Not Found | Sumaautomation",
         description: "Product not found. Browse our Arduino, PLC and electronics components in Sri Lanka.",
-        robots: {
-          index: false,
-          follow: true,
-        }
       };
     }
 
@@ -91,22 +74,18 @@ export async function generateMetadata({ params }) {
     
     if (!product) {
       return {
-        title: "Product Not Found | sumaautomation",
+        title: "Product Not Found | Sumaautomation",
         description: "Product not found. Browse our Arduino, PLC and electronics components in Sri Lanka.",
-        robots: {
-          index: false,
-          follow: true,
-        }
       };
     }
 
     // Optimized SEO title and description
-    const seoTitle = `${product.name} - Buy in Sri Lanka | sumaautomation`;
-    const truncatedDescription = product.description?.substring(0, 120) || 'Quality electronic components';
-    const seoDescription = `Buy ${product.name} in Sri Lanka. ${truncatedDescription} Best price, fast delivery, expert support.`;
+    const seoTitle = `${product.name} | Buy in Sri Lanka | Sumaautomation`;
+    const truncatedDescription = product.description?.substring(0, 155) || 'Quality electronic components and automation solutions';
+    const seoDescription = `${truncatedDescription}... Best prices, fast delivery, expert support. Buy ${product.name} in Sri Lanka.`;
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sumaautomation.lk';
-    const productImage = product.thumbnail || product.images?.[0]?.url || `${baseUrl}/title.jpg`;
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
+    const productImage = product.thumbnail || product.images?.[0]?.url || `${baseUrl}/images/default-product.jpg`;
 
     return {
       title: seoTitle,
@@ -117,7 +96,7 @@ export async function generateMetadata({ params }) {
       },
       
       openGraph: {
-        title: `${product.name} - Buy Online | sumaautomation`,
+        title: seoTitle,
         description: seoDescription,
         url: `${baseUrl}/products/${slug}`,
         images: [
@@ -125,23 +104,23 @@ export async function generateMetadata({ params }) {
             url: productImage,
             width: 1200,
             height: 630,
-            alt: `Buy ${product.name} in Sri Lanka - sumaautomation`,
+            alt: `${product.name} - Sumaautomation Sri Lanka`,
           },
         ],
-        type: 'website', // ✅ CORRECTED: Use 'website' instead of 'product'
-        siteName: 'sumaautomation',
+        // ✅ FIX: Use 'website' instead of 'product'
+        type: 'website',
+        siteName: 'Sumaautomation',
         locale: 'en_LK',
       },
       
       twitter: {
         card: "summary_large_image",
-        site: "@sumaautomation", // Add your Twitter handle if you have one
-        title: `${product.name} - Buy in Sri Lanka`,
+        title: seoTitle,
         description: seoDescription,
         images: [productImage],
       },
       
-      keywords: `${product.name}, ${product.brand}, arduino, plc, electronics, sri lanka, buy online, ${product.category}`,
+      keywords: product.tags?.join(', ') || `${product.name}, ${product.brand}, ${product.category}, electronics, automation, sri lanka`,
       
       robots: {
         index: true,
@@ -153,183 +132,169 @@ export async function generateMetadata({ params }) {
           'max-snippet': -1,
         }
       },
-      
-      // Additional meta tags for products
-      other: {
-        'product:brand': product.brand,
-        'product:price:amount': product.price.toString(),
-        'product:price:currency': product.currency,
-        'product:availability': product.isInStock ? 'in stock' : 'out of stock',
-      }
     };
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
-      title: "Product Details | sumaautomation",
-      description: "View product details and specifications. Buy electronics components in Sri Lanka.",
-      robots: {
-        index: true,
-        follow: true,
-      }
+      title: "Product Details | Sumaautomation",
+      description: "View product details and specifications. Buy electronics components and automation solutions in Sri Lanka.",
     };
   }
 }
+
 // Product Schema for rich results
 function generateProductSchema(product, slug) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sumaautomation.lk';
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://www.sumaautomation.lk';
   
-  return {
+  const schema = {
     "@context": "https://schema.org/",
     "@type": "Product",
     "name": product.name,
-    "description": product.description,
-    "image": product.images?.map(img => img.url) || [product.thumbnail],
-    "sku": product.sku || slug,
-    "mpn": product.mpn || slug,
+    "description": product.description?.substring(0, 200) || `${product.name} - Available at Suma Automation Sri Lanka`,
+    "image": product.images?.map(img => img.url) || [product.thumbnail] || [`${baseUrl}/images/default-product.jpg`],
+    "sku": product.sku || `SA-${slug}`,
+    "mpn": product.sku || `SA-${slug}`,
     "brand": {
       "@type": "Brand",
-      "name": product.brand
+      "name": product.brand || "Sumaautomation"
     },
     "offers": {
       "@type": "Offer",
       "url": `${baseUrl}/products/${slug}`,
-      "priceCurrency": product.currency,
-      "price": product.price,
-      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
+      "priceCurrency": product.currency || "LKR",
+      "price": product.price?.toString() || "0",
+      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       "availability": product.isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "seller": {
         "@type": "Organization",
-        "name": "sumaautomation",
+        "name": "Sumaautomation",
         "url": baseUrl
-      },
-      "shippingDetails": {
-        "@type": "OfferShippingDetails",
-        "shippingRate": {
-          "@type": "MonetaryAmount",
-          "value": "0",
-          "currency": product.currency
-        },
-        "shippingDestination": {
-          "@type": "DefinedRegion",
-          "addressCountry": "LK"
-        }
       }
-    },
-    "aggregateRating": product.rating ? {
+    }
+  };
+
+  // Add rating if available
+  if (product.rating?.average && product.rating.average > 0) {
+    schema.aggregateRating = {
       "@type": "AggregateRating",
       "ratingValue": product.rating.average.toString(),
       "reviewCount": product.rating.count.toString()
-    } : undefined
-  };
+    };
+  }
+
+  return schema;
 }
 
-// Main page component with enhanced features
+// Main page component
+// Main page component
 export default async function ProductPage({ params }) {
+  let product;
+  let slug; // ✅ Declare slug at the top level
+  
   try {
+    // ✅ Get the slug from params
     const resolvedParams = await params;
-    const slug = resolvedParams.slug;
+    slug = resolvedParams.slug;
 
     if (!slug) {
-      console.error('No slug provided in params');
+      console.error('❌ No slug provided in params');
       return notFound();
     }
 
-    const product = await getProduct(slug);
+    product = await getProduct(slug);
     
     if (!product) {
-      console.error(`Product not found for slug: ${slug}`);
+      console.error(`❌ Product not found for slug: ${slug}`);
       return notFound();
     }
 
-    const discountPercentage =
-      product.originalPrice && product.originalPrice > product.price
-        ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-        : product.discount || 0;
+    console.log(`✅ Rendering product page for: ${product.name}`);
 
-    const rating = product.rating?.average || 0;
-    const reviewCount = product.rating?.count || 0;
-    const hasImages = product.images && product.images.length > 0;
+  } catch (error) {
+    console.error('❌ Error in ProductPage:', error);
+    return notFound();
+  }
 
-    // Generate schema markup
-    const productSchema = generateProductSchema(product, slug);
+  // Calculate discount percentage
+  const discountPercentage = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : product.discount || 0;
 
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        {/* JSON-LD Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
-        />
-        
-        {/* Navigation Breadcrumb with microdata */}
-        <nav className="bg-white/80 backdrop-blur-sm border-b border-slate-200 shadow-sm" itemScope itemType="https://schema.org/BreadcrumbList">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <ol className="flex items-center space-x-2 text-sm">
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <Link 
-                  href="/" 
-                  className="text-slate-600 hover:text-blue-600 transition-colors duration-200 font-medium"
-                  itemProp="item"
-                >
-                  <span itemProp="name">Home</span>
-                </Link>
-                <meta itemProp="position" content="1" />
-              </li>
-              <li>
-                <span className="mx-2 text-slate-400">/</span>
-              </li>
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <Link 
-                  href="/products" 
-                  className="text-slate-600 hover:text-blue-600 transition-colors duration-200 font-medium"
-                  itemProp="item"
-                >
-                  <span itemProp="name">Products</span>
-                </Link>
-                <meta itemProp="position" content="2" />
-              </li>
-              <li>
-                <span className="mx-2 text-slate-400">/</span>
-              </li>
-              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                <span className="text-slate-900 font-semibold truncate max-w-xs" itemProp="name">
-                  {product.name}
-                </span>
-                <meta itemProp="position" content="3" />
-              </li>
-            </ol>
+  const rating = product.rating?.average || 0;
+  const reviewCount = product.rating?.count || 0;
+  const hasImages = product.images && product.images.length > 0;
+  const primaryImage = product.thumbnail || product.images?.[0]?.url || "/images/placeholder-product.jpg";
+
+  // ✅ Now slug is available in this scope
+  const productSchema = generateProductSchema(product, slug);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      
+      {/* Navigation Breadcrumb */}
+      <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center space-x-2 text-sm">
+            <Link 
+              href="/" 
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium"
+            >
+              Home
+            </Link>
+            <span className="text-gray-400">/</span>
+            <Link 
+              href="/products" 
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium"
+            >
+              Products
+            </Link>
+            <span className="text-gray-400">/</span>
+            <span className="text-gray-900 font-semibold truncate max-w-xs md:max-w-md">
+              {product.name}
+            </span>
           </div>
-        </nav>
+        </div>
+      </nav>
 
-        {/* Main Product Content */}
-        <div className="max-w-7xl mx-auto px-4 py-8 grid lg:grid-cols-2 gap-8 lg:gap-12" itemScope itemType="https://schema.org/Product">
+      {/* Main Product Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          
           {/* Product Images */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <Image
-                src={product.thumbnail || product.images?.[0]?.url || "/placeholder-product.jpg"}
-                width={600}
-                height={600}
-                alt={product.name}
-                className="w-full h-auto object-cover transition-transform duration-300 hover:scale-105"
-                priority
-                itemProp="image"
-              />
+          <div className="space-y-4">
+            {/* Main Image */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="aspect-square relative">
+                <Image
+                  src={primaryImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
             </div>
 
-            {hasImages && (
+            {/* Thumbnail Gallery */}
+            {hasImages && product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-3">
-                {product.images.slice(0, 4).map((img, i) => (
+                {product.images.slice(0, 4).map((img, index) => (
                   <div 
-                    key={i} 
-                    className="border-2 border-slate-200 rounded-xl bg-white overflow-hidden hover:border-blue-500 transition-all duration-200 hover:shadow-md cursor-pointer"
+                    key={index}
+                    className="aspect-square relative border-2 border-gray-200 rounded-lg bg-white overflow-hidden hover:border-blue-500 transition-all duration-200 cursor-pointer"
                   >
                     <Image
                       src={img.url}
-                      width={200}
-                      height={200}
-                      alt={`${product.name} - View ${i + 1}`}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                      alt={`${product.name} - View ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 25vw, 12.5vw"
                     />
                   </div>
                 ))}
@@ -341,75 +306,85 @@ export default async function ProductPage({ params }) {
           <div className="space-y-6">
             {/* Title and Brand */}
             <div className="space-y-3">
-              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 leading-tight" itemProp="name">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
                 {product.name}
               </h1>
-              <p className="text-lg text-slate-600 font-medium">
-                Brand: <span className="text-blue-600" itemProp="brand" itemScope itemType="https://schema.org/Brand">
-                  <span itemProp="name">{product.brand}</span>
+              <div className="flex items-center gap-4">
+                <span className="text-lg text-gray-600 font-medium">
+                  Brand: <span className="text-blue-600">{product.brand}</span>
                 </span>
-              </p>
+                {product.category && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    {product.category}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Rating with microdata */}
+            {/* Rating */}
             {rating > 0 && (
-              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm border border-slate-200" itemProp="aggregateRating" itemScope itemType="https://schema.org/AggregateRating">
+              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200">
                 <div className="flex items-center gap-1">
-                  <span className="text-amber-500 text-lg">⭐</span>
-                  <span className="text-slate-900 font-semibold" itemProp="ratingValue">{rating.toFixed(1)}</span>
+                  <span className="text-yellow-400 text-lg">★</span>
+                  <span className="text-gray-900 font-semibold">{rating.toFixed(1)}</span>
                 </div>
-                <span className="text-slate-500">(<span itemProp="reviewCount">{reviewCount}</span> reviews)</span>
+                <span className="text-gray-500">({reviewCount} reviews)</span>
               </div>
             )}
 
-            {/* Pricing with microdata */}
-            <div className="space-y-3 bg-gradient-to-r from-white to-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm" itemProp="offers" itemScope itemType="https://schema.org/Offer">
-              <meta itemProp="priceCurrency" content={product.currency} />
-              <p className="text-3xl lg:text-4xl font-bold text-slate-900">
-                <span itemProp="price">{product.price}</span> {product.currency}
-              </p>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <div className="flex items-center gap-4">
-                  <p className="line-through text-slate-500 text-xl font-medium">
-                    {product.currency} {product.originalPrice}
-                  </p>
-                  <span className="bg-gradient-to-r from-red-500 to-pink-600 text-white text-sm px-4 py-2 rounded-full font-bold shadow-lg">
-                    🎉 Save {discountPercentage}%
-                  </span>
-                </div>
-              )}
-              <link itemProp="availability" href={product.isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"} />
+            {/* Pricing */}
+            <div className="space-y-3 bg-gradient-to-r from-white to-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-baseline gap-3">
+                <p className="text-3xl lg:text-4xl font-bold text-gray-900">
+                  {product.currency} {product.price?.toLocaleString()}
+                </p>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <div className="flex items-center gap-2">
+                    <p className="text-xl text-gray-500 line-through">
+                      {product.currency} {product.originalPrice?.toLocaleString()}
+                    </p>
+                    <span className="bg-red-500 text-white text-sm px-2 py-1 rounded font-bold">
+                      Save {discountPercentage}%
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Stock Status */}
-            <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white ${
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${
               product.isInStock 
-                ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg" 
-                : "bg-gradient-to-r from-red-500 to-rose-600 shadow-lg"
+                ? "bg-green-100 text-green-800 border border-green-200" 
+                : "bg-red-100 text-red-800 border border-red-200"
             }`}>
               <span className="text-lg">
                 {product.isInStock ? "✓" : "✗"}
               </span>
-              {product.isInStock ? "In Stock - Ready to Ship" : "Out of Stock"}
+              {product.isInStock ? `In Stock (${product.stock} available)` : "Out of Stock"}
             </div>
 
-            {/* Add to Cart Button */}
-            <button 
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              disabled={!product.isInStock}
-            >
-              {product.isInStock ? "🛒 Add to Cart" : "❌ Out of Stock"} - {product.currency} {product.price}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button 
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!product.isInStock}
+              >
+                {product.isInStock ? "Add to Cart" : "Out of Stock"}
+              </button>
+              <button className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                ♡
+              </button>
+            </div>
 
-            {/* Quick Features */}
+            {/* Key Features */}
             {product.features && product.features.length > 0 && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">🚀 Key Features</h2>
-                <ul className="text-slate-700 space-y-2">
-                  {product.features.slice(0, 5).map((f, i) => (
-                    <li key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                      <span className="text-green-500 text-lg shrink-0">✓</span>
-                      <span className="font-medium">{f}</span>
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Key Features</h2>
+                <ul className="text-gray-700 space-y-2">
+                  {product.features.slice(0, 5).map((feature, index) => (
+                    <li key={index} className="flex items-center gap-3">
+                      <span className="text-green-500 text-lg">✓</span>
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -418,11 +393,9 @@ export default async function ProductPage({ params }) {
 
             {/* Description */}
             {product.description && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-200">
-                  📝 Description
-                </h2>
-                <p className="text-slate-700 leading-relaxed whitespace-pre-line" itemProp="description">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                   {product.description}
                 </p>
               </div>
@@ -430,58 +403,23 @@ export default async function ProductPage({ params }) {
 
             {/* Specifications */}
             {product.specifications && Object.keys(product.specifications).length > 0 && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-200">
-                  ⚙️ Specifications
-                </h2>
-                <dl className="grid grid-cols-1 gap-2">
-                  {Object.entries(product.specifications).slice(0, 8).map(([key, value]) => (
-                    <div key={key} className="flex justify-between py-2 border-b border-slate-100">
-                      <dt className="font-medium text-slate-600">{key}:</dt>
-                      <dd className="text-slate-900 text-right">{value}</dd>
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Specifications</h2>
+                <dl className="grid grid-cols-1 gap-3">
+                  {Object.entries(product.specifications).slice(0, 6).map(([key, value]) => (
+                    <div key={key} className="flex justify-between py-2 border-b border-gray-100">
+                      <dt className="font-medium text-gray-600">{key}:</dt>
+                      <dd className="text-gray-900">{value}</dd>
                     </div>
                   ))}
                 </dl>
               </div>
             )}
-
-            {/* Trust Badges */}
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="bg-white rounded-xl p-4 border border-slate-200">
-                <div className="text-2xl mb-2">🚚</div>
-                <p className="text-sm font-medium text-slate-700">Fast Delivery</p>
-                <p className="text-xs text-slate-500">Islandwide</p>
-              </div>
-              <div className="bg-white rounded-xl p-4 border border-slate-200">
-                <div className="text-2xl mb-2">🔒</div>
-                <p className="text-sm font-medium text-slate-700">Secure Payment</p>
-                <p className="text-xs text-slate-500">SSL Protected</p>
-              </div>
-            </div>
-
-            {/* Related Products CTA */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-100 rounded-2xl p-6 border border-blue-200">
-              <h3 className="text-xl font-bold text-slate-900 mb-3">
-                🔧 Need More Components?
-              </h3>
-              <p className="text-slate-700 mb-4 text-sm">
-                Explore our complete range of Arduino boards, PLC systems, and electronic components for your projects.
-              </p>
-              <Link 
-                href="/products" 
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:shadow-lg text-sm"
-              >
-                Browse All Products →
-              </Link>
-            </div>
           </div>
         </div>
       </div>
-    );
-  } catch (error) {
-    console.error('Error in ProductPage:', error);
-    return notFound();
-  }
+    </div>
+  );
 }
 
 export const dynamic = "force-dynamic";

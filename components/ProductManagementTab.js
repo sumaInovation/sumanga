@@ -2,9 +2,9 @@
 // components/ProductManagementTab.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
-// ✅ Slug generation utilities
+// ✅ Slug generation utilities (memoized)
 const generateSlug = (text) => {
   if (!text) return '';
   
@@ -39,6 +39,64 @@ const generateProductSlug = (productName) => {
   return filteredParts.join('-');
 };
 
+// ✅ Default form data to avoid repetition
+const defaultFormData = {
+  // Basic Information
+  name: '',
+  slug: '',
+  description: '',
+  shortDescription: '',
+  
+  // Pricing
+  price: '',
+  originalPrice: '',
+  discount: '',
+  currency: 'USD',
+  
+  // Category & Brand
+  category: '',
+  subcategory: '',
+  brand: '',
+  
+  // Images
+  images: [],
+  thumbnail: '',
+  
+  // Inventory
+  sku: '',
+  stock: '',
+  lowStockAlert: 10,
+  
+  // SEO Fields
+  metaTitle: '',
+  metaDescription: '',
+  keywords: [],
+  
+  // Product Status
+  status: 'draft',
+  isFeatured: false,
+  isOnSale: false,
+  
+  // Specifications
+  specifications: {},
+  features: [],
+  tags: [],
+  
+  // Dimensions & Weight
+  weight: { value: '', unit: 'kg' },
+  dimensions: { length: '', width: '', height: '', unit: 'cm' },
+  
+  // Shipping
+  shipping: {
+    isFree: false,
+    cost: '',
+    weightBasedCost: false
+  },
+  
+  // Vendor
+  vendor: ''
+};
+
 export default function ProductManagementTab() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,62 +116,22 @@ export default function ProductManagementTab() {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   // Form state - expanded to match Product schema
-  const [formData, setFormData] = useState({
-    // Basic Information
-    name: '',
-    slug: '',
-    description: '',
-    shortDescription: '',
-    
-    // Pricing
-    price: '',
-    originalPrice: '',
-    discount: '',
-    currency: 'USD',
-    
-    // Category & Brand
-    category: '',
-    subcategory: '',
-    brand: '',
-    
-    // Images
-    images: [],
-    thumbnail: '',
-    
-    // Inventory
-    sku: '',
-    stock: '',
-    lowStockAlert: 10,
-    
-    // SEO Fields
-    metaTitle: '',
-    metaDescription: '',
-    keywords: [],
-    
-    // Product Status
-    status: 'draft',
-    isFeatured: false,
-    isOnSale: false,
-    
-    // Specifications
-    specifications: {},
-    features: [],
-    tags: [],
-    
-    // Dimensions & Weight
-    weight: { value: '', unit: 'kg' },
-    dimensions: { length: '', width: '', height: '', unit: 'cm' },
-    
-    // Shipping
-    shipping: {
-      isFree: false,
-      cost: '',
-      weightBasedCost: false
-    },
-    
-    // Vendor
-    vendor: ''
-  });
+  const [formData, setFormData] = useState(defaultFormData);
+
+  // ✅ Memoized filtered products for better performance
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = !filters.search || 
+        product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.brand.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.sku.toLowerCase().includes(filters.search.toLowerCase());
+      
+      const matchesCategory = !filters.category || product.category === filters.category;
+      const matchesStatus = filters.status === 'all' || product.status === filters.status;
+      
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [products, filters]);
 
   // ✅ Auto-generate slug when name changes (only for new products)
   useEffect(() => {
@@ -126,12 +144,8 @@ export default function ProductManagementTab() {
     }
   }, [formData.name, editingProduct, slugManuallyEdited]);
 
-  // Fetch products
-  useEffect(() => {
-    fetchProducts();
-  }, [filters]);
-
-  const fetchProducts = async () => {
+  // ✅ Optimized fetch products with useCallback
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
@@ -161,51 +175,52 @@ export default function ProductManagementTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  // Extract categories from products
+  // Fetch products
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // ✅ Optimized category extraction
   useEffect(() => {
     if (products.length > 0) {
-      const allCats = [];
-      products.forEach(product => {
-        if (product.category) {
-          allCats.push(product.category);
-        }
-      });
-      setCategories(allCats);
+      const uniqueCategories = [...new Set(products
+        .map(product => product.category)
+        .filter(Boolean)
+      )];
+      setCategories(uniqueCategories);
     }
   }, [products]);
 
-  // Add new category
-  const addNewCategory = () => {
+  // ✅ Optimized handlers
+  const addNewCategory = useCallback(() => {
     const newCategory = newCategoryInput.trim();
-    if (newCategory) {
-      setCategories([...categories, newCategory]);
-      setFormData({...formData, category: newCategory});
+    if (newCategory && !categories.includes(newCategory)) {
+      setCategories(prev => [...prev, newCategory]);
+      setFormData(prev => ({ ...prev, category: newCategory }));
       setNewCategoryInput('');
     }
-  };
+  }, [newCategoryInput, categories]);
 
-  // Handle image URL changes
-  const handleImageUrlChange = (index, value) => {
-    const newImageUrls = [...imageUrls];
-    newImageUrls[index] = value;
-    setImageUrls(newImageUrls);
-  };
+  const handleImageUrlChange = useCallback((index, value) => {
+    setImageUrls(prev => {
+      const newImageUrls = [...prev];
+      newImageUrls[index] = value;
+      return newImageUrls;
+    });
+  }, []);
 
-  // Add new image URL field
-  const addImageUrlField = () => {
-    setImageUrls([...imageUrls, '']);
-  };
+  const addImageUrlField = useCallback(() => {
+    setImageUrls(prev => [...prev, '']);
+  }, []);
 
-  // Remove image URL field
-  const removeImageUrlField = (index) => {
-    const newImageUrls = imageUrls.filter((_, i) => i !== index);
-    setImageUrls(newImageUrls);
-  };
+  const removeImageUrlField = useCallback((index) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   // ✅ Handle slug field changes
-  const handleSlugChange = (e) => {
+  const handleSlugChange = useCallback((e) => {
     const newSlug = e.target.value;
     setFormData(prev => ({ ...prev, slug: newSlug }));
     
@@ -213,17 +228,18 @@ export default function ProductManagementTab() {
     if (newSlug !== generateProductSlug(formData.name)) {
       setSlugManuallyEdited(true);
     }
-  };
+  }, [formData.name]);
 
   // ✅ Regenerate slug manually
-  const regenerateSlug = () => {
+  const regenerateSlug = useCallback(() => {
     if (formData.name) {
       const newSlug = generateProductSlug(formData.name);
       setFormData(prev => ({ ...prev, slug: newSlug }));
       setSlugManuallyEdited(false);
     }
-  };
+  }, [formData.name]);
 
+  // ✅ Optimized form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -245,42 +261,41 @@ export default function ProductManagementTab() {
 
       const submitData = {
         ...formData,
-        // ✅ ADD THIS: Include the createdBy field (use the same ID as your Arduino product)
-        createdBy: "6916ba84f8d28cd7a989ef1a", // Use the same ID from your existing product
+        createdBy: "6916ba84f8d28cd7a989ef1a",
         
-        // Convert string numbers to actual numbers
-        price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-        discount: formData.discount ? parseFloat(formData.discount) : 0,
-        stock: parseInt(formData.stock),
-        lowStockAlert: parseInt(formData.lowStockAlert),
+        // Convert string numbers to actual numbers with validation
+        price: Math.max(0, parseFloat(formData.price) || 0),
+        originalPrice: formData.originalPrice ? Math.max(0, parseFloat(formData.originalPrice)) : undefined,
+        discount: Math.min(100, Math.max(0, parseFloat(formData.discount) || 0)),
+        stock: Math.max(0, parseInt(formData.stock) || 0),
+        lowStockAlert: Math.max(0, parseInt(formData.lowStockAlert) || 10),
         
         // Images data
         images: processedImages,
         thumbnail: thumbnailUrl || (processedImages.length > 0 ? processedImages[0].url : ''),
         
-        // Convert weight and dimensions
+        // Convert weight and dimensions with validation
         weight: {
           ...formData.weight,
-          value: formData.weight.value ? parseFloat(formData.weight.value) : undefined
+          value: formData.weight.value ? Math.max(0, parseFloat(formData.weight.value)) : undefined
         },
         dimensions: {
           ...formData.dimensions,
-          length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : undefined,
-          width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : undefined,
-          height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : undefined
+          length: formData.dimensions.length ? Math.max(0, parseFloat(formData.dimensions.length)) : undefined,
+          width: formData.dimensions.width ? Math.max(0, parseFloat(formData.dimensions.width)) : undefined,
+          height: formData.dimensions.height ? Math.max(0, parseFloat(formData.dimensions.height)) : undefined
         },
         
         // Convert shipping cost
         shipping: {
           ...formData.shipping,
-          cost: formData.shipping.cost ? parseFloat(formData.shipping.cost) : 0
+          cost: Math.max(0, parseFloat(formData.shipping.cost) || 0)
         },
         
         // Ensure arrays are properly formatted
-        keywords: Array.isArray(formData.keywords) ? formData.keywords : [],
-        features: Array.isArray(formData.features) ? formData.features : [],
-        tags: Array.isArray(formData.tags) ? formData.tags : [],
+        keywords: Array.isArray(formData.keywords) ? formData.keywords.filter(k => k.trim()) : [],
+        features: Array.isArray(formData.features) ? formData.features.filter(f => f.trim()) : [],
+        tags: Array.isArray(formData.tags) ? formData.tags.filter(t => t.trim()) : [],
         specifications: formData.specifications || {}
       };
 
@@ -291,7 +306,6 @@ export default function ProductManagementTab() {
       const method = editingProduct ? 'PUT' : 'POST';
 
       console.log('🟢 Sending request to:', url);
-      console.log('🟢 Submit data:', submitData);
 
       const response = await fetch(url, {
         method,
@@ -302,7 +316,7 @@ export default function ProductManagementTab() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
+        throw new Error(data.error || data.message || 'Something went wrong');
       }
 
       if (data.success) {
@@ -320,51 +334,19 @@ export default function ProductManagementTab() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      slug: '',
-      description: '',
-      shortDescription: '',
-      price: '',
-      originalPrice: '',
-      discount: '',
-      currency: 'USD',
-      category: '',
-      subcategory: '',
-      brand: '',
-      images: [],
-      thumbnail: '',
-      sku: '',
-      stock: '',
-      lowStockAlert: 10,
-      metaTitle: '',
-      metaDescription: '',
-      keywords: [],
-      status: 'draft',
-      isFeatured: false,
-      isOnSale: false,
-      specifications: {},
-      features: [],
-      tags: [],
-      weight: { value: '', unit: 'kg' },
-      dimensions: { length: '', width: '', height: '', unit: 'cm' },
-      shipping: {
-        isFree: false,
-        cost: '',
-        weightBasedCost: false
-      },
-      vendor: ''
-    });
+  // ✅ Optimized reset form
+  const resetForm = useCallback(() => {
+    setFormData(defaultFormData);
     setNewCategoryInput('');
     setImageUrls(['']);
     setThumbnailUrl('');
-    setSlugManuallyEdited(false); // ✅ Reset the manual edit flag
-  };
+    setSlugManuallyEdited(false);
+  }, []);
 
-  const handleEdit = (product) => {
+  // ✅ Optimized edit handler
+  const handleEdit = useCallback((product) => {
     setEditingProduct(product);
-    setSlugManuallyEdited(true); // Assume edited products have custom slugs
+    setSlugManuallyEdited(true);
     
     // Set image URLs from product data
     if (product.images && product.images.length > 0) {
@@ -377,21 +359,21 @@ export default function ProductManagementTab() {
     setThumbnailUrl(product.thumbnail || '');
 
     setFormData({
-      name: product.name,
-      slug: product.slug,
-      description: product.description,
+      name: product.name || '',
+      slug: product.slug || '',
+      description: product.description || '',
       shortDescription: product.shortDescription || '',
-      price: product.price.toString(),
+      price: product.price?.toString() || '',
       originalPrice: product.originalPrice ? product.originalPrice.toString() : '',
       discount: product.discount ? product.discount.toString() : '',
       currency: product.currency || 'USD',
       category: product.category || '',
       subcategory: product.subcategory || '',
-      brand: product.brand,
+      brand: product.brand || '',
       images: product.images || [],
       thumbnail: product.thumbnail || '',
-      sku: product.sku,
-      stock: product.stock.toString(),
+      sku: product.sku || '',
+      stock: product.stock?.toString() || '',
       lowStockAlert: product.lowStockAlert || 10,
       metaTitle: product.metaTitle || '',
       metaDescription: product.metaDescription || '',
@@ -412,8 +394,9 @@ export default function ProductManagementTab() {
       vendor: product.vendor || ''
     });
     setShowAddForm(true);
-  };
+  }, []);
 
+  // ✅ Optimized delete handler
   const handleDelete = async (productId) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
@@ -438,20 +421,23 @@ export default function ProductManagementTab() {
     }
   };
 
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      case 'out_of_stock': return 'bg-red-100 text-red-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
+  // ✅ Memoized status badge color
+  const getStatusBadgeColor = useCallback((status) => {
+    const statusColors = {
+      'published': 'bg-green-100 text-green-800',
+      'draft': 'bg-yellow-100 text-yellow-800',
+      'archived': 'bg-gray-100 text-gray-800',
+      'out_of_stock': 'bg-red-100 text-red-800'
+    };
+    return statusColors[status] || 'bg-blue-100 text-blue-800';
+  }, []);
 
+  // ✅ Loading state component
   if (loading && products.length === 0) {
     return (
-      <div className="flex justify-center py-8">
+      <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading products...</span>
       </div>
     );
   }
@@ -462,7 +448,7 @@ export default function ProductManagementTab() {
         <h2 className="text-2xl font-bold">Product Management</h2>
         <button 
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors duration-200"
         >
           <span>+</span>
           Add New Product
@@ -470,7 +456,7 @@ export default function ProductManagementTab() {
       </div>
 
       {/* Search and Filter Section */}
-      <div className="mb-6 bg-white p-4 rounded-lg border border-gray-200">
+      <div className="mb-6 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -480,8 +466,8 @@ export default function ProductManagementTab() {
               type="text"
               placeholder="Search products..."
               value={filters.search}
-              onChange={(e) => setFilters({...filters, search: e.target.value})}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              onChange={(e) => setFilters(prev => ({...prev, search: e.target.value}))}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
             />
           </div>
           <div>
@@ -490,12 +476,12 @@ export default function ProductManagementTab() {
             </label>
             <select
               value={filters.category}
-              onChange={(e) => setFilters({...filters, category: e.target.value})}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              onChange={(e) => setFilters(prev => ({...prev, category: e.target.value}))}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
             >
               <option value="">All Categories</option>
               {categories.map((cat, index) => (
-                <option key={index} value={cat}>{cat}</option>
+                <option key={`${cat}-${index}`} value={cat}>{cat}</option>
               ))}
             </select>
           </div>
@@ -505,8 +491,8 @@ export default function ProductManagementTab() {
             </label>
             <select
               value={filters.status}
-              onChange={(e) => setFilters({...filters, status: e.target.value})}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              onChange={(e) => setFilters(prev => ({...prev, status: e.target.value}))}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
             >
               <option value="all">All Status</option>
               <option value="published">Published</option>
@@ -521,7 +507,7 @@ export default function ProductManagementTab() {
       {/* Add/Edit Product Form */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto text-gray-900">
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto text-gray-900 shadow-xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -532,7 +518,8 @@ export default function ProductManagementTab() {
                   setEditingProduct(null);
                   resetForm();
                 }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 hover:text-gray-700 text-2xl transition-colors duration-200"
+                aria-label="Close"
               >
                 ✕
               </button>
@@ -540,7 +527,7 @@ export default function ProductManagementTab() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="text-lg font-semibold mb-4">Basic Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -551,8 +538,8 @@ export default function ProductManagementTab() {
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, name: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                       placeholder="e.g., Simatic S7-200 CN CPU 224 Compact Unit"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -576,14 +563,14 @@ export default function ProductManagementTab() {
                         required
                         value={formData.slug}
                         onChange={handleSlugChange}
-                        className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                         placeholder="product-name-slug"
                       />
                       <button
                         type="button"
                         onClick={regenerateSlug}
                         disabled={!formData.name}
-                        className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 disabled:opacity-50 text-sm whitespace-nowrap"
+                        className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap transition-colors duration-200"
                         title="Regenerate slug from product name"
                       >
                         🔄
@@ -605,8 +592,8 @@ export default function ProductManagementTab() {
                       required
                       rows={4}
                       value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, description: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200 resize-vertical"
                     />
                   </div>
 
@@ -617,8 +604,8 @@ export default function ProductManagementTab() {
                     <textarea
                       rows={2}
                       value={formData.shortDescription}
-                      onChange={(e) => setFormData({...formData, shortDescription: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, shortDescription: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200 resize-vertical"
                       placeholder="Brief description for product listings"
                     />
                   </div>
@@ -626,7 +613,7 @@ export default function ProductManagementTab() {
               </div>
 
               {/* Images */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="text-lg font-semibold mb-4">Product Images</h4>
                 
                 {/* Thumbnail URL */}
@@ -638,7 +625,7 @@ export default function ProductManagementTab() {
                     type="url"
                     value={thumbnailUrl}
                     onChange={(e) => setThumbnailUrl(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     placeholder="https://example.com/thumbnail.jpg"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -657,14 +644,14 @@ export default function ProductManagementTab() {
                         type="url"
                         value={url}
                         onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                        className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                         placeholder="https://example.com/product-image.jpg"
                       />
                       {imageUrls.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeImageUrlField(index)}
-                          className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700"
+                          className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 transition-colors duration-200"
                         >
                           Remove
                         </button>
@@ -675,7 +662,7 @@ export default function ProductManagementTab() {
                   <button
                     type="button"
                     onClick={addImageUrlField}
-                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-2"
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-2 transition-colors duration-200"
                   >
                     + Add Another Image URL
                   </button>
@@ -687,7 +674,7 @@ export default function ProductManagementTab() {
               </div>
 
               {/* Pricing */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="text-lg font-semibold mb-4">Pricing</h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
@@ -697,10 +684,11 @@ export default function ProductManagementTab() {
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
                       required
                       value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, price: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
 
@@ -711,9 +699,10 @@ export default function ProductManagementTab() {
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
                       value={formData.originalPrice}
-                      onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, originalPrice: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
 
@@ -727,8 +716,8 @@ export default function ProductManagementTab() {
                       min="0"
                       max="100"
                       value={formData.discount}
-                      onChange={(e) => setFormData({...formData, discount: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, discount: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
 
@@ -738,8 +727,8 @@ export default function ProductManagementTab() {
                     </label>
                     <select
                       value={formData.currency}
-                      onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, currency: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     >
                       <option value="USD">USD</option>
                       <option value="EUR">EUR</option>
@@ -750,7 +739,7 @@ export default function ProductManagementTab() {
               </div>
 
               {/* Category & Brand */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="text-lg font-semibold mb-4">Category & Brand</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2">
@@ -761,12 +750,12 @@ export default function ProductManagementTab() {
                       <select
                         required
                         value={formData.category}
-                        onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        onChange={(e) => setFormData(prev => ({...prev, category: e.target.value}))}
+                        className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                       >
                         <option value="">Select Category</option>
                         {categories.map((cat, index) => (
-                          <option key={index} value={cat}>{cat}</option>
+                          <option key={`${cat}-${index}`} value={cat}>{cat}</option>
                         ))}
                       </select>
                       <div className="flex gap-2">
@@ -775,13 +764,13 @@ export default function ProductManagementTab() {
                           value={newCategoryInput}
                           onChange={(e) => setNewCategoryInput(e.target.value)}
                           placeholder="New category"
-                          className="w-40 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                          className="w-40 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                         />
                         <button
                           type="button"
                           onClick={addNewCategory}
                           disabled={!newCategoryInput.trim()}
-                          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+                          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                         >
                           Add
                         </button>
@@ -796,8 +785,8 @@ export default function ProductManagementTab() {
                     <input
                       type="text"
                       value={formData.subcategory}
-                      onChange={(e) => setFormData({...formData, subcategory: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, subcategory: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
 
@@ -809,15 +798,15 @@ export default function ProductManagementTab() {
                       type="text"
                       required
                       value={formData.brand}
-                      onChange={(e) => setFormData({...formData, brand: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, brand: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Inventory */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="text-lg font-semibold mb-4">Inventory</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -828,8 +817,8 @@ export default function ProductManagementTab() {
                       type="text"
                       required
                       value={formData.sku}
-                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, sku: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                       placeholder="SKU-001"
                     />
                   </div>
@@ -841,9 +830,10 @@ export default function ProductManagementTab() {
                     <input
                       type="number"
                       required
+                      min="0"
                       value={formData.stock}
-                      onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, stock: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
 
@@ -853,16 +843,17 @@ export default function ProductManagementTab() {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       value={formData.lowStockAlert}
-                      onChange={(e) => setFormData({...formData, lowStockAlert: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, lowStockAlert: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Product Status */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="text-lg font-semibold mb-4">Product Status</h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
@@ -872,8 +863,8 @@ export default function ProductManagementTab() {
                     <select
                       required
                       value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, status: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     >
                       <option value="draft">Draft</option>
                       <option value="published">Published</option>
@@ -883,24 +874,24 @@ export default function ProductManagementTab() {
                   </div>
 
                   <div className="flex items-center">
-                    <label className="flex items-center">
+                    <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.isFeatured}
-                        onChange={(e) => setFormData({...formData, isFeatured: e.target.checked})}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        onChange={(e) => setFormData(prev => ({...prev, isFeatured: e.target.checked}))}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-colors duration-200"
                       />
                       <span className="ml-2 text-sm text-gray-700">Featured Product</span>
                     </label>
                   </div>
 
                   <div className="flex items-center">
-                    <label className="flex items-center">
+                    <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.isOnSale}
-                        onChange={(e) => setFormData({...formData, isOnSale: e.target.checked})}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        onChange={(e) => setFormData(prev => ({...prev, isOnSale: e.target.checked}))}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-colors duration-200"
                       />
                       <span className="ml-2 text-sm text-gray-700">On Sale</span>
                     </label>
@@ -913,14 +904,14 @@ export default function ProductManagementTab() {
                     <input
                       type="text"
                       value={formData.vendor}
-                      onChange={(e) => setFormData({...formData, vendor: e.target.value})}
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      onChange={(e) => setFormData(prev => ({...prev, vendor: e.target.value}))}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-colors duration-200"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => {
@@ -928,14 +919,14 @@ export default function ProductManagementTab() {
                     setEditingProduct(null);
                     resetForm();
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   {loading ? 'Saving...' : (editingProduct ? 'Update Product' : 'Create Product')}
                 </button>
@@ -946,7 +937,7 @@ export default function ProductManagementTab() {
       )}
 
       {/* Products Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -972,14 +963,17 @@ export default function ProductManagementTab() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product) => (
-                <tr key={product._id} className="hover:bg-gray-50">
+              {filteredProducts.map((product) => (
+                <tr key={product._id} className="hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img
                         className="h-10 w-10 rounded object-cover"
                         src={product.thumbnail || product.images?.[0]?.url || '/default-product.png'}
                         alt={product.name}
+                        onError={(e) => {
+                          e.target.src = '/default-product.png';
+                        }}
                       />
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{product.name}</div>
@@ -1020,13 +1014,13 @@ export default function ProductManagementTab() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEdit(product)}
-                        className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50"
+                        className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50 transition-colors duration-200"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(product._id)}
-                        className="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50"
+                        className="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50 transition-colors duration-200"
                       >
                         Delete
                       </button>
@@ -1038,10 +1032,15 @@ export default function ProductManagementTab() {
           </table>
         </div>
 
-        {products.length === 0 && !loading && (
+        {filteredProducts.length === 0 && !loading && (
           <div className="text-center py-12 text-gray-500">
             <div className="text-4xl mb-4">📦</div>
             <p className="text-lg font-medium">No products found</p>
+            {products.length > 0 && (
+              <p className="text-sm text-gray-400 mt-2">
+                Try adjusting your search filters
+              </p>
+            )}
           </div>
         )}
       </div>
