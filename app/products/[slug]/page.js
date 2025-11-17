@@ -199,6 +199,9 @@ function generateProductSchema(product, slug) {
   const safeRatingValue = Math.max(1, Math.min(5, ratingValue)); // Clamp between 1-5
   const safeReviewCount = Math.max(1, reviewCount); // Minimum 1 review
   
+  // Set price valid for 30 days from now
+  const priceValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  
   const schema = {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -219,13 +222,19 @@ function generateProductSchema(product, slug) {
       "bestRating": "5",
       "worstRating": "1"
     },
-    // ✅ REQUIRED: For price and availability
+    // ✅ COMPLETE: Includes priceValidUntil to fix the non-critical issue
     "offers": {
       "@type": "Offer",
       "price": product.price?.toString() || "0",
       "priceCurrency": product.currency || "LKR",
+      "priceValidUntil": priceValidUntil,
       "availability": product.isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      "url": `${baseUrl}/products/${slug}`
+      "url": `${baseUrl}/products/${slug}`,
+      "seller": {
+        "@type": "Organization",
+        "name": "Suma Automation",
+        "url": baseUrl
+      }
     }
   };
 
