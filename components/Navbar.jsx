@@ -11,13 +11,16 @@ export default function Navbar() {
   const [isDesktopDropdownOpen, setIsDesktopDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCoursesDropdownOpen, setIsCoursesDropdownOpen] = useState(false);
   const desktopDropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
+  const coursesDropdownRef = useRef(null);
 
   // Role checks
   const isAdmin = session?.user?.role === "admin";
   const isStaff = session?.user?.role === "staff" || isAdmin;
+  const isInstructor = session?.user?.role === "instructor" || isStaff;
   const userRole = session?.user?.role || "user";
 
   // Default avatar as data URL
@@ -35,6 +38,9 @@ export default function Navbar() {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
         setIsMobileMenuOpen(false);
       }
+      if (coursesDropdownRef.current && !coursesDropdownRef.current.contains(event.target)) {
+        setIsCoursesDropdownOpen(false);
+      }
     }
 
     function handleEscapeKey(event) {
@@ -42,6 +48,7 @@ export default function Navbar() {
         setIsDesktopDropdownOpen(false);
         setIsMobileDropdownOpen(false);
         setIsMobileMenuOpen(false);
+        setIsCoursesDropdownOpen(false);
       }
     }
 
@@ -82,6 +89,7 @@ export default function Navbar() {
     switch (userRole) {
       case 'admin': return 'bg-red-100 text-red-800';
       case 'staff': return 'bg-green-100 text-green-800';
+      case 'instructor': return 'bg-purple-100 text-purple-800';
       default: return 'bg-blue-100 text-blue-800';
     }
   };
@@ -94,7 +102,7 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Link href="/" className="text-xl font-bold text-gray-800">
-                Your App
+                Suma Automation
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -116,7 +124,7 @@ export default function Navbar() {
               href="/" 
               className="text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors"
             >
-              Your App
+              Suma Automation
             </Link>
           </div>
 
@@ -128,6 +136,132 @@ export default function Navbar() {
             >
               Home
             </Link>
+            
+            {/* Courses Link - Visible to all */}
+            <Link 
+              href="/courses" 
+              className="text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
+            >
+              Courses
+            </Link>
+
+            {/* Courses Dropdown - For Staff/Admin/Instructor */}
+            {(isStaff || isInstructor) && (
+              <div className="relative" ref={coursesDropdownRef}>
+                <button
+                  onClick={() => setIsCoursesDropdownOpen(!isCoursesDropdownOpen)}
+                  className="flex items-center gap-1 text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
+                  aria-expanded={isCoursesDropdownOpen}
+                >
+                  <span>Course Control</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${isCoursesDropdownOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isCoursesDropdownOpen && (
+                  <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    {/* Instructor Level Access */}
+                    {isInstructor && (
+                      <>
+                        <Link 
+                          href="/instructor/courses" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>📚</span>
+                          My Courses
+                        </Link>
+                        <Link 
+                          href="/instructor/courses/create" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>➕</span>
+                          Create Course
+                        </Link>
+                        <Link 
+                          href="/instructor/students" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>👥</span>
+                          My Students
+                        </Link>
+                        <div className="border-t border-gray-200 my-1"></div>
+                      </>
+                    )}
+
+                    {/* Staff Level Access */}
+                    {isStaff && (
+                      <>
+                        <Link 
+                          href="/staff/courses" 
+                          className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors flex items-center gap-2 border-l-2 border-green-500 ml-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>🛠️</span>
+                          Manage Courses
+                        </Link>
+                        <Link 
+                          href="/staff/students" 
+                          className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors flex items-center gap-2 border-l-2 border-green-500 ml-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>📊</span>
+                          Student Management
+                        </Link>
+                        <Link 
+                          href="/staff/enrollments" 
+                          className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors flex items-center gap-2 border-l-2 border-green-500 ml-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>🎫</span>
+                          Enrollment Requests
+                        </Link>
+                        <div className="border-t border-gray-200 my-1"></div>
+                      </>
+                    )}
+
+                    {/* Admin Level Access */}
+                    {isAdmin && (
+                      <>
+                        <Link 
+                          href="/admin/courses" 
+                          className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2 border-l-2 border-red-500 ml-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>⚙️</span>
+                          All Courses
+                        </Link>
+                        <Link 
+                          href="/admin/instructors" 
+                          className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2 border-l-2 border-red-500 ml-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>👨‍🏫</span>
+                          Instructor Management
+                        </Link>
+                        <Link 
+                          href="/admin/analytics" 
+                          className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2 border-l-2 border-red-500 ml-2"
+                          onClick={() => setIsCoursesDropdownOpen(false)}
+                        >
+                          <span>📈</span>
+                          Course Analytics
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <Link 
               href="/about" 
               className="text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
@@ -140,6 +274,8 @@ export default function Navbar() {
             >
               Contact
             </Link>
+            
+            {/* Staff/Admin Links */}
             {isStaff && (
               <Link 
                 href="/staff/dashboard" 
@@ -210,6 +346,18 @@ export default function Navbar() {
                     >
                       Dashboard
                     </Link>
+                    
+                    {/* Student Dashboard Link */}
+                    <Link 
+                      href="/student/dashboard" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      onClick={() => setIsDesktopDropdownOpen(false)}
+                      role="menuitem"
+                    >
+                      <span>🎓</span>
+                      My Learning
+                    </Link>
+                    
                     <Link 
                       href="/profile" 
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -219,25 +367,40 @@ export default function Navbar() {
                       Profile
                     </Link>
                     
-                    {isStaff && (
+                    {/* Instructor Links */}
+                    {isInstructor && (
                       <Link 
-                        href="/staff/dashboard" 
-                        className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 border-l-2 border-green-500 ml-2 transition-colors"
+                        href="/instructor/dashboard" 
+                        className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 border-l-2 border-purple-500 ml-2 transition-colors flex items-center gap-2"
                         onClick={() => setIsDesktopDropdownOpen(false)}
                         role="menuitem"
                       >
-                        🛠️ Staff Dashboard
+                        <span>👨‍🏫</span>
+                        Instructor Dashboard
+                      </Link>
+                    )}
+                    
+                    {isStaff && (
+                      <Link 
+                        href="/staff/dashboard" 
+                        className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 border-l-2 border-green-500 ml-2 transition-colors flex items-center gap-2"
+                        onClick={() => setIsDesktopDropdownOpen(false)}
+                        role="menuitem"
+                      >
+                        <span>🛠️</span>
+                        Staff Dashboard
                       </Link>
                     )}
                     
                     {isAdmin && (
                       <Link 
                         href="/admin/dashboard" 
-                        className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-2 border-red-500 ml-2 transition-colors"
+                        className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-2 border-red-500 ml-2 transition-colors flex items-center gap-2"
                         onClick={() => setIsDesktopDropdownOpen(false)}
                         role="menuitem"
                       >
-                        ⚙️ Admin Dashboard
+                        <span>⚙️</span>
+                        Admin Dashboard
                       </Link>
                     )}
                     
@@ -312,16 +475,39 @@ export default function Navbar() {
                       </div>
                     </div>
                     
-                    <Link href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsMobileDropdownOpen(false)}>🏠 Home</Link>
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsMobileDropdownOpen(false)}>📊 Dashboard</Link>
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setIsMobileDropdownOpen(false)}>👤 Profile</Link>
+                    <Link href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🏠 Home</Link>
+                    <Link href="/courses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📚 Courses</Link>
+                    <Link href="/student/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🎓 My Learning</Link>
+                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📊 Dashboard</Link>
+                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>👤 Profile</Link>
                     
-                    {isStaff && (
-                      <Link href="/staff/dashboard" className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 border-l-2 border-green-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>🛠️ Staff Dashboard</Link>
-                    )}
-                    
-                    {isAdmin && (
-                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ Admin Dashboard</Link>
+                    {/* Course Control Section for Mobile */}
+                    {(isStaff || isInstructor) && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Course Control</div>
+                        
+                        {isInstructor && (
+                          <>
+                            <Link href="/instructor/courses" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2 border-l-2 border-purple-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>📚 My Courses</Link>
+                            <Link href="/instructor/courses/create" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2 border-l-2 border-purple-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>➕ Create Course</Link>
+                          </>
+                        )}
+                        
+                        {isStaff && (
+                          <>
+                            <Link href="/staff/courses" className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 border-l-2 border-green-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>🛠️ Manage Courses</Link>
+                            <Link href="/staff/students" className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 border-l-2 border-green-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>📊 Students</Link>
+                          </>
+                        )}
+                        
+                        {isAdmin && (
+                          <>
+                            <Link href="/admin/courses" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ All Courses</Link>
+                            <Link href="/admin/instructors" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>👨‍🏫 Instructors</Link>
+                          </>
+                        )}
+                      </>
                     )}
                     
                     <div className="border-t border-gray-100 my-1"></div>
@@ -358,6 +544,10 @@ export default function Navbar() {
               <Link href="/" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
                 <span>🏠</span>
                 Home
+              </Link>
+              <Link href="/courses" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <span>📚</span>
+                Courses
               </Link>
               <Link href="/about" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
                 <span>ℹ️</span>

@@ -382,19 +382,19 @@ function ReviewItem({ review }) {
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+    <div className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow duration-200 bg-white">
       {/* User Info Header with Avatar */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+        <div className="flex items-start gap-3">
           {/* ✅ FIXED: Use userInfo instead of author */}
           <UserAvatar userInfo={review.userInfo} size="md" />
           
           {/* User Name and Rating */}
-          <div>
-            <p className="font-semibold text-gray-900">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900 truncate">
               {review.userInfo?.name || "Customer"} {/* ✅ FIXED */}
             </p>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
               <div className="flex items-center gap-1">
                 {renderStars(review.rating)}
               </div>
@@ -406,37 +406,37 @@ function ReviewItem({ review }) {
         </div>
         
         {/* Review Date */}
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-gray-500 sm:text-right">
           {formatDate(review.createdAt)}
         </span>
       </div>
       
       {/* Review Title */}
       {review.title && (
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 line-clamp-2">
           {review.title}
         </h3>
       )}
       
       {/* Review Comment */}
-      <p className="text-gray-700 mb-4 leading-relaxed">{review.comment}</p>
+      <p className="text-gray-700 mb-4 leading-relaxed line-clamp-4">{review.comment}</p>
       
       {/* Review Actions */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div className="flex items-center gap-4 text-sm text-gray-500">
           {review.helpful?.count > 0 && (
-            <span>
+            <span className="text-xs sm:text-sm">
               {review.helpful.count} people found this helpful
             </span>
           )}
         </div>
         
         {/* Action Buttons */}
-        <div className="flex gap-3">
-          <button className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium">
+        <div className="flex gap-3 self-end sm:self-auto">
+          <button className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium px-2 py-1 rounded hover:bg-blue-50">
             Helpful
           </button>
-          <button className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          <button className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded hover:bg-gray-50">
             Report
           </button>
         </div>
@@ -444,14 +444,14 @@ function ReviewItem({ review }) {
       
       {/* Admin Response */}
       {review.adminReply && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-blue-600 font-semibold">Admin Response</span>
-            <span className="text-blue-500 text-sm">
+        <div className="mt-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+            <span className="text-blue-600 font-semibold text-sm">Admin Response</span>
+            <span className="text-blue-500 text-xs sm:text-sm">
               {formatDate(review.adminReply.repliedAt)}
             </span>
           </div>
-          <p className="text-blue-700">{review.adminReply.text}</p>
+          <p className="text-blue-700 text-sm sm:text-base">{review.adminReply.text}</p>
         </div>
       )}
     </div>
@@ -521,24 +521,24 @@ export default async function ProductPage({ params }) {
       />
       
       {/* Navigation Breadcrumb */}
-      <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-2 text-sm">
+      <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center space-x-2 text-sm overflow-x-auto">
             <Link 
               href="/" 
-              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium"
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium whitespace-nowrap"
             >
               Home
             </Link>
             <span className="text-gray-400">/</span>
             <Link 
               href="/products" 
-              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium"
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium whitespace-nowrap"
             >
               Products
             </Link>
             <span className="text-gray-400">/</span>
-            <span className="text-gray-900 font-semibold truncate max-w-xs md:max-w-md">
+            <span className="text-gray-900 font-semibold truncate max-w-[150px] sm:max-w-xs md:max-w-md">
               {product.name}
             </span>
           </div>
@@ -546,37 +546,37 @@ export default async function ProductPage({ params }) {
       </nav>
 
       {/* Main Product Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
           
-          {/* Product Images */}
-          <div className="space-y-4">
+          {/* Product Images - Mobile First */}
+          <div className="space-y-4 order-1">
             {/* Main Image */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
               <div className="aspect-square relative">
                 <SafeImage
                   src={primaryImage}
                   alt={product.name}
                   className="object-cover"
                   priority={true}
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 40vw"
                 />
               </div>
             </div>
 
             {/* Thumbnail Gallery */}
             {hasImages && product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-2 sm:gap-3">
                 {product.images.slice(0, 4).map((img, index) => (
                   <div 
                     key={index}
-                    className="aspect-square relative border-2 border-gray-200 rounded-lg bg-white overflow-hidden hover:border-blue-500 transition-all duration-200 cursor-pointer"
+                    className="aspect-square relative border-2 border-gray-200 rounded-lg sm:rounded-xl bg-white overflow-hidden hover:border-blue-500 transition-all duration-200 cursor-pointer"
                   >
                     <SafeImage
                       src={img.url}
                       alt={`${product.name} - View ${index + 1}`}
                       className="object-cover"
-                      sizes="(max-width: 768px) 25vw, 12.5vw"
+                      sizes="(max-width: 640px) 25vw, (max-width: 1024px) 12.5vw, 10vw"
                     />
                   </div>
                 ))}
@@ -584,48 +584,48 @@ export default async function ProductPage({ params }) {
             )}
           </div>
 
-          {/* Product Details */}
-          <div className="space-y-6">
+          {/* Product Details - Mobile First */}
+          <div className="space-y-4 sm:space-y-6 order-2">
             {/* Title and Brand */}
-            <div className="space-y-3">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+            <div className="space-y-2 sm:space-y-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight break-words">
                 {product.name}
               </h1>
-              <div className="flex items-center gap-4">
-                <span className="text-lg text-gray-600 font-medium">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="text-base sm:text-lg text-gray-600 font-medium">
                   Brand: <span className="text-blue-600">{product.brand}</span>
                 </span>
                 {product.category && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                  <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm font-medium self-start">
                     {product.category}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Rating */}
+            {/* Rating - Mobile Optimized */}
             {rating > 0 && (
-              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200">
+              <div className="flex items-center gap-3 bg-white rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 shadow-sm border border-gray-200">
                 <div className="flex items-center gap-1">
-                  <span className="text-yellow-400 text-lg">★</span>
-                  <span className="text-gray-900 font-semibold">{rating.toFixed(1)}</span>
+                  <span className="text-yellow-400 text-base sm:text-lg">★</span>
+                  <span className="text-gray-900 font-semibold text-sm sm:text-base">{rating.toFixed(1)}</span>
                 </div>
-                <span className="text-gray-500">({reviewCount} reviews)</span>
+                <span className="text-gray-500 text-sm sm:text-base">({reviewCount} reviews)</span>
               </div>
             )}
 
-            {/* Pricing */}
-            <div className="space-y-3 bg-gradient-to-r from-white to-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="flex items-baseline gap-3">
-                <p className="text-3xl lg:text-4xl font-bold text-gray-900">
+            {/* Pricing - Mobile Optimized */}
+            <div className="space-y-2 sm:space-y-3 bg-gradient-to-r from-white to-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3">
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
                   {product.currency} {product.price?.toLocaleString()}
                 </p>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <div className="flex items-center gap-2">
-                    <p className="text-xl text-gray-500 line-through">
+                    <p className="text-lg sm:text-xl text-gray-500 line-through">
                       {product.currency} {product.originalPrice?.toLocaleString()}
                     </p>
-                    <span className="bg-red-500 text-white text-sm px-2 py-1 rounded font-bold">
+                    <span className="bg-red-500 text-white text-xs sm:text-sm px-2 py-1 rounded font-bold">
                       Save {discountPercentage}%
                     </span>
                   </div>
@@ -633,129 +633,129 @@ export default async function ProductPage({ params }) {
               </div>
             </div>
 
-            {/* Stock Status */}
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${
+            {/* Stock Status - Mobile Optimized */}
+            <div className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-semibold text-sm sm:text-base ${
               product.isInStock 
                 ? "bg-green-100 text-green-800 border border-green-200" 
                 : "bg-red-100 text-red-800 border border-red-200"
             }`}>
-              <span className="text-lg">
+              <span className="text-base">
                 {product.isInStock ? "✓" : "✗"}
               </span>
               {product.isInStock ? `In Stock (${product.stock} available)` : "Out of Stock"}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
+            {/* Action Buttons - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button 
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg"
                 disabled={!product.isInStock}
               >
                 {product.isInStock ? "Add to Cart" : "Out of Stock"}
               </button>
               <button 
-                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-base sm:text-lg sm:w-auto w-full"
                 aria-label="Add to wishlist"
               >
-                ♡
+                ♡ Wishlist
               </button>
             </div>
 
-            {/* Key Features */}
+            {/* Key Features - Mobile Optimized */}
             {product.features && product.features.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Key Features</h2>
-                <ul className="text-gray-700 space-y-2">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-3 sm:mb-4">Key Features</h2>
+                <ul className="text-gray-700 space-y-2 sm:space-y-3">
                   {product.features.slice(0, 5).map((feature, index) => (
-                    <li key={index} className="flex items-center gap-3">
-                      <span className="text-green-500 text-lg">✓</span>
-                      <span>{feature}</span>
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="text-green-500 text-lg mt-0.5 flex-shrink-0">✓</span>
+                      <span className="text-sm sm:text-base">{feature}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Description */}
+            {/* Description - Mobile Optimized */}
             {product.description && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-3 sm:mb-4">Description</h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line text-sm sm:text-base">
                   {product.description}
                 </p>
               </div>
             )}
 
-            {/* Specifications */}
+            {/* Specifications - Mobile Optimized */}
             {product.specifications && Object.keys(product.specifications).length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Specifications</h2>
-                <dl className="grid grid-cols-1 gap-3">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-3 sm:mb-4">Specifications</h2>
+                <dl className="grid grid-cols-1 gap-2 sm:gap-3">
                   {Object.entries(product.specifications).slice(0, 6).map(([key, value]) => (
-                    <div key={key} className="flex justify-between py-2 border-b border-gray-100">
-                      <dt className="font-medium text-gray-600">{key}:</dt>
-                      <dd className="text-gray-900">{value}</dd>
+                    <div key={key} className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-gray-100 gap-1 sm:gap-0">
+                      <dt className="font-medium text-gray-600 text-sm sm:text-base">{key}:</dt>
+                      <dd className="text-gray-900 text-sm sm:text-base sm:text-right">{value}</dd>
                     </div>
                   ))}
                 </dl>
               </div>
             )}
 
-            {/* ✅ REVIEW FORM SECTION - Always show the review form */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            {/* ✅ REVIEW FORM SECTION - Mobile Optimized */}
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
               <ReviewForm productId={product._id} productName={product.name} />
             </div>
 
-            {/* ✅ UPDATED REAL REVIEWS SECTION WITH CORRECT userInfo FIELD */}
+            {/* ✅ UPDATED REAL REVIEWS SECTION - Mobile Optimized */}
             {product.reviews && product.reviews.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                     Customer Reviews ({product.reviews.length})
                   </h2>
                   {rating > 0 && (
-                    <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
-                      <span className="text-yellow-400 text-xl">★</span>
-                      <span className="text-gray-900 font-bold text-lg">{rating.toFixed(1)}</span>
-                      <span className="text-gray-600">out of 5</span>
+                    <div className="flex items-center gap-2 bg-blue-50 px-3 sm:px-4 py-2 rounded-lg">
+                      <span className="text-yellow-400 text-lg sm:text-xl">★</span>
+                      <span className="text-gray-900 font-bold text-base sm:text-lg">{rating.toFixed(1)}</span>
+                      <span className="text-gray-600 text-sm sm:text-base">out of 5</span>
                     </div>
                   )}
                 </div>
                 
-                {/* Reviews Summary Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Reviews Summary Stats - Mobile Optimized */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-gray-900">Rating Breakdown</h3>
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Rating Breakdown</h3>
                     {[5, 4, 3, 2, 1].map((star) => {
                       const starCount = product.reviews.filter(r => r.rating === star).length;
                       const percentage = (starCount / product.reviews.length) * 100;
                       return (
-                        <div key={star} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-600 w-8">{star} ★</span>
+                        <div key={star} className="flex items-center gap-2 sm:gap-3">
+                          <span className="text-xs sm:text-sm text-gray-600 w-6 sm:w-8">{star} ★</span>
                           <div className="flex-1 bg-gray-200 rounded-full h-2">
                             <div 
                               className="bg-yellow-400 h-2 rounded-full" 
                               style={{ width: `${percentage}%` }}
                             ></div>
                           </div>
-                          <span className="text-sm text-gray-500 w-12">({starCount})</span>
+                          <span className="text-xs sm:text-sm text-gray-500 w-8 sm:w-12">({starCount})</span>
                         </div>
                       );
                     })}
                   </div>
                   
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-gray-900">Review Highlights</h3>
-                    <div className="flex items-center gap-2 text-green-600">
+                  <div className="space-y-2 sm:space-y-3">
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Review Highlights</h3>
+                    <div className="flex items-center gap-2 text-green-600 text-sm sm:text-base">
                       <span>✓</span>
                       <span>{product.reviews.filter(r => r.rating >= 4).length} positive reviews</span>
                     </div>
-                    <div className="flex items-center gap-2 text-blue-600">
+                    <div className="flex items-center gap-2 text-blue-600 text-sm sm:text-base">
                       <span>💬</span>
                       <span>{product.reviews.filter(r => r.comment && r.comment.length > 50).length} detailed reviews</span>
                     </div>
                     {product.reviews.some(r => r.adminReply) && (
-                      <div className="flex items-center gap-2 text-purple-600">
+                      <div className="flex items-center gap-2 text-purple-600 text-sm sm:text-base">
                         <span>👨‍💼</span>
                         <span>{product.reviews.filter(r => r.adminReply).length} admin responses</span>
                       </div>
@@ -763,8 +763,8 @@ export default async function ProductPage({ params }) {
                   </div>
                 </div>
                 
-                {/* Individual Reviews with User Avatars */}
-                <div className="space-y-6">
+                {/* Individual Reviews with User Avatars - Mobile Optimized */}
+                <div className="space-y-4 sm:space-y-6">
                   {product.reviews.map((review) => (
                     <ReviewItem key={review._id} review={review} />
                   ))}
@@ -772,12 +772,12 @@ export default async function ProductPage({ params }) {
               </div>
             )}
 
-            {/* No Reviews Message - Only show if there are no reviews */}
+            {/* No Reviews Message - Mobile Optimized */}
             {(!product.reviews || product.reviews.length === 0) && (
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 text-center">
-                <div className="text-gray-400 text-6xl mb-4">💬</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Reviews Yet</h3>
-                <p className="text-gray-600">Be the first to share your experience with this product!</p>
+              <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-200 text-center">
+                <div className="text-gray-400 text-4xl sm:text-6xl mb-3 sm:mb-4">💬</div>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Reviews Yet</h3>
+                <p className="text-gray-600 text-sm sm:text-base">Be the first to share your experience with this product!</p>
               </div>
             )}
           </div>
