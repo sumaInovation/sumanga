@@ -14,20 +14,40 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    // Not required for OAuth users
   },
   image: {
     type: String,
   },
   role: {
     type: String,
-    enum: ["user", "staff", "admin"],
-    default: "user", // Make sure default is set
+    enum: ["user", "student", "staff", "admin"],
+    default: "user",
   },
   provider: {
     type: String,
     enum: ["credentials", "google"],
     default: "credentials",
+  },
+  phoneNumber: {
+    type: String,
+  },
+  whatsappNumber: {
+    type: String,
+  },
+  course:{
+    type: String,
+  },
+  paidAmount: {
+    type: Number,
+    default: 0,
+  },
+  dueAmount: {
+    type: Number,
+    default: 0,
+  },
+  profileCompleted: {
+    type: Boolean,
+    default: false,
   },
   emailVerified: {
     type: Date,
@@ -40,10 +60,12 @@ const userSchema = new mongoose.Schema({
     type: Date,
   },
 }, {
-  timestamps: true // This ensures updatedAt is managed
+  timestamps: true
 });
 
 // Clear the model first to avoid compilation issues
-delete mongoose.models.User;
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
 
 export default mongoose.model("User", userSchema);

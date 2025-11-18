@@ -1,5 +1,5 @@
 
-// app/admin/dashboard/page.jsx
+// app/admin/product/dashboard/page.jsx
 "use client";
 
 import { useSession } from "next-auth/react";
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-2">Manage your electronics store and online courses</p>
+              <p className="text-gray-600 mt-2">Manage your electronics store</p>
             </div>
             <div className="text-sm text-gray-500">
               Welcome, {session?.user?.name}
@@ -98,9 +98,8 @@ export default function AdminDashboard() {
               {[
                 { id: "overview", name: "Overview", icon: "📊" },
                 { id: "users", name: "User Management", icon: "👥" },
-                { id: "products", name: "Products", icon: "📦" }, // Added Products tab here
+                { id: "products", name: "Products", icon: "📦" },
                 { id: "electronics", name: "Electronics", icon: "📱" },
-                { id: "courses", name: "Online Courses", icon: "🎓" },
                 { id: "analytics", name: "Analytics", icon: "📈" }
               ].map((tab) => (
                 <button
@@ -132,7 +131,6 @@ export default function AdminDashboard() {
           )}
           {activeTab === "products" && <ProductManagementTab />}
           {activeTab === "electronics" && <ElectronicsTab />}
-          {activeTab === "courses" && <CoursesTab />}
           {activeTab === "analytics" && <AnalyticsTab />}
         </div>
       </div>
@@ -174,11 +172,11 @@ function OverviewTab() {
         <div className="bg-purple-50 p-6 rounded-lg">
           <div className="flex items-center">
             <div className="p-3 bg-purple-100 rounded-lg">
-              <span className="text-2xl">🎓</span>
+              <span className="text-2xl">📦</span>
             </div>
             <div className="ml-4">
-              <h3 className="text-lg font-semibold text-purple-900">Course Enrollments</h3>
-              <p className="text-3xl font-bold text-purple-600">567</p>
+              <h3 className="text-lg font-semibold text-purple-900">Total Products</h3>
+              <p className="text-3xl font-bold text-purple-600">156</p>
             </div>
           </div>
         </div>
@@ -211,9 +209,9 @@ function OverviewTab() {
         </button>
         
         <button className="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition-colors text-left">
-          <div className="text-2xl mb-2">🎬</div>
-          <h3 className="font-semibold">Course Content</h3>
-          <p className="text-sm opacity-90">Upload and manage course materials</p>
+          <div className="text-2xl mb-2">👥</div>
+          <h3 className="font-semibold">User Management</h3>
+          <p className="text-sm opacity-90">Manage user roles and permissions</p>
         </button>
       </div>
     </div>
@@ -355,55 +353,6 @@ function ElectronicsTab() {
               </button>
               <button className="flex-1 bg-gray-600 text-white py-2 rounded text-sm hover:bg-gray-700">
                 View
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Courses Management Tab Component
-function CoursesTab() {
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Online Courses</h2>
-        <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-          + Create Course
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {[
-          { title: "Web Development Bootcamp", students: 234, price: "$99", status: "Active" },
-          { title: "Mobile App Development", students: 167, price: "$129", status: "Active" },
-          { title: "Data Science Fundamentals", students: 89, price: "$149", status: "Draft" },
-          { title: "UI/UX Design Masterclass", students: 312, price: "$79", status: "Active" }
-        ].map((course, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-semibold text-gray-900 text-lg">{course.title}</h3>
-              <span className={`text-sm px-2 py-1 rounded ${
-                course.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {course.status}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600 mb-4">
-              <span>👥 {course.students} students</span>
-              <span className="font-bold text-green-600">{course.price}</span>
-            </div>
-            <div className="flex space-x-2">
-              <button className="flex-1 bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">
-                Manage Content
-              </button>
-              <button className="flex-1 bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700">
-                View Analytics
-              </button>
-              <button className="flex-1 bg-gray-600 text-white py-2 rounded text-sm hover:bg-gray-700">
-                Edit
               </button>
             </div>
           </div>

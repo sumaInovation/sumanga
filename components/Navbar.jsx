@@ -1,4 +1,3 @@
-
 // components/Navbar.js
 "use client";
 
@@ -286,7 +285,7 @@ export default function Navbar() {
             )}
             {isAdmin && (
               <Link 
-                href="/admin/dashboard" 
+                href="/admin" 
                 className="text-red-700 hover:text-red-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-red-50"
               >
                 Admin
@@ -394,7 +393,7 @@ export default function Navbar() {
                     
                     {isAdmin && (
                       <Link 
-                        href="/admin/dashboard" 
+                        href="/admin" 
                         className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-2 border-red-500 ml-2 transition-colors flex items-center gap-2"
                         onClick={() => setIsDesktopDropdownOpen(false)}
                         role="menuitem"
@@ -505,6 +504,7 @@ export default function Navbar() {
                           <>
                             <Link href="/admin/courses" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ All Courses</Link>
                             <Link href="/admin/instructors" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>👨‍🏫 Instructors</Link>
+                            <Link href="/admin" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ Admin Dashboard</Link>
                           </>
                         )}
                       </>

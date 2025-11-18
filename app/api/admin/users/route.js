@@ -1,3 +1,6 @@
+//This API provides endpoints for administrators to manage users in the system - 
+// specifically to view all users and update their roles.
+
 // app/api/admin/users/route.js
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options"

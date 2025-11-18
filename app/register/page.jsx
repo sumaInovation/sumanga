@@ -1,4 +1,5 @@
 
+// app/register/page.js
 "use client";
 
 import { useState } from "react";
@@ -10,6 +11,10 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [course, setCourse] = useState("");
+  const [role, setRole] = useState("user");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -19,11 +24,26 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
+    // Validate student fields
+    if (role === "student" && (!phoneNumber || !whatsappNumber || !course)) {
+      setError("Phone number, WhatsApp number, and course are required for student registration");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          password, 
+          phoneNumber, 
+          whatsappNumber, 
+          course,
+          role 
+        }),
       });
 
       const data = await res.json();
@@ -34,8 +54,11 @@ export default function RegisterPage() {
         return;
       }
 
-      // Redirect to login with success message
-      router.push("/login?message=registered_successfully");
+      if (data.redirect) {
+        router.push(data.redirect);
+      } else {
+        router.push("/login?message=registered_successfully");
+      }
     } catch (error) {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -47,9 +70,17 @@ export default function RegisterPage() {
       setGoogleLoading(true);
       setError("");
       
-      // Standard approach - Google OAuth handles both registration and login automatically
+      // Store the role in sessionStorage to retrieve after Google auth
+      sessionStorage.setItem('registrationRole', role);
+      
+      // For student registration via Google, redirect to complete profile
+      const callbackUrl = role === "student" 
+        ? "/complete-profile"
+        : "/dashboard";
+      
       await signIn("google", { 
-        callbackUrl: "/dashboard"
+        callbackUrl,
+        state: JSON.stringify({ role: role })
       });
     } catch (error) {
       console.error("Google auth error:", error);
@@ -68,11 +99,42 @@ export default function RegisterPage() {
         </div>
       )}
 
+      {/* Role Selection */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          I am registering as:
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setRole("user")}
+            className={`px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+              role === "user"
+                ? "bg-blue-100 border-blue-500 text-blue-700"
+                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Regular User
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole("student")}
+            className={`px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+              role === "student"
+                ? "bg-blue-100 border-blue-500 text-blue-700"
+                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Student
+          </button>
+        </div>
+      </div>
+
       {/* Google Auth Button */}
       <button
         onClick={handleGoogleAuth}
         disabled={googleLoading || loading}
-        className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+        className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed mb-6 transition-colors"
       >
         {googleLoading ? (
           <div className="flex items-center">
@@ -104,7 +166,7 @@ export default function RegisterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors"
             disabled={loading || googleLoading}
           />
         </div>
@@ -115,10 +177,50 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors"
             disabled={loading || googleLoading}
           />
         </div>
+        
+        {/* Show phone fields only for student registration */}
+        {role === "student" && (
+          <>
+            <div>
+              <input
+                type="tel"
+                placeholder="Phone Number"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                disabled={loading || googleLoading}
+              />
+            </div>
+            <div>
+              <input
+                type="tel"
+                placeholder="WhatsApp Number"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                disabled={loading || googleLoading}
+              />
+            </div>
+              <div>
+              <input
+                type="text"
+                placeholder="Course"
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                disabled={loading || googleLoading}
+              />
+            </div>
+          </>
+        )}
+        
         <div>
           <input
             type="password"
@@ -127,14 +229,14 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors"
             disabled={loading || googleLoading}
           />
         </div>
         <button
           type="submit"
           disabled={loading || googleLoading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Creating Account..." : "Create Account"}
         </button>
@@ -143,7 +245,7 @@ export default function RegisterPage() {
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-600 hover:text-blue-500 font-medium">
+          <a href="/login" className="text-blue-600 hover:text-blue-500 font-medium transition-colors">
             Sign in
           </a>
         </p>
