@@ -1,9 +1,9 @@
 
-// middleware.js
+// proxy.js
 import { withAuth } from "next-auth/middleware";
 
 export default withAuth(
-  function middleware(req) {
+  function proxy(req) {
     const token = req.nextauth.token;
     
     // If user is a student and profile is not completed, redirect to complete profile
