@@ -1,5 +1,7 @@
 
 // app/complete-profile/page.js
+export const dynamic = 'force-dynamic';
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,7 +14,7 @@ export default function CompleteProfilePage() {
   const searchParams = useSearchParams();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [course,setCourse]=useState("");
+  const [course, setCourse] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
