@@ -1,9 +1,6 @@
 
 // app/complete-profile/page.js
-export const dynamic = 'force-dynamic';
-
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -167,3 +164,4 @@ export default function CompleteProfilePage() {
     </div>
   );
 }
+export const dynamic = 'force-dynamic';
