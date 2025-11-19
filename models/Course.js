@@ -101,6 +101,29 @@ const batchSchema = new mongoose.Schema({
   }
 });
 
+// Special Offer Schema (singular - matching your form)
+const specialOfferSchema = new mongoose.Schema({
+  isActive: {
+    type: Boolean,
+    default: false
+  },
+  discountPercentage: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  offerPrice: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  validUntil: {
+    type: Date,
+    default: null
+  }
+});
+
 const courseSchema = new mongoose.Schema({
   // Basic Information
   title: {
@@ -151,21 +174,15 @@ const courseSchema = new mongoose.Schema({
     type: String,
     default: 'INR'
   },
-  specialOffers: [{
-    title: String,
-    description: String,
-    discountType: {
-      type: String,
-      enum: ['percentage', 'fixed', 'early-bird']
-    },
-    discountValue: Number,
-    validFrom: Date,
-    validUntil: Date,
-    isActive: {
-      type: Boolean,
-      default: true
-    }
-  }],
+  
+  // ✅ FIXED: Changed from specialOffers (array) to specialOffer (object)
+  specialOffer: specialOfferSchema,
+
+  // ✅ ADDED: Next batch start date
+  nextBatchStartDate: {
+    type: Date,
+    default: null
+  },
 
   // Duration Information
   duration: {

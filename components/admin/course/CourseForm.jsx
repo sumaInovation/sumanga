@@ -17,7 +17,7 @@ export default function CourseForm({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
 
-  // Normalize initial data to ensure all arrays are defined and properly structured
+  // ✅ FIXED: Convert specialOffer object to specialOffers array to match model
   const normalizedInitialData = initialData ? {
     ...initialData,
     equipmentUsed: Array.isArray(initialData.equipmentUsed) ? initialData.equipmentUsed : [{ name: "", description: "", quantity: 1 }],
@@ -43,7 +43,20 @@ export default function CourseForm({
         }))
       : [],
     gallery: Array.isArray(initialData.gallery) ? initialData.gallery : [],
-    syllabus: Array.isArray(initialData.syllabus) ? initialData.syllabus : []
+    syllabus: Array.isArray(initialData.syllabus) ? initialData.syllabus : [],
+    // ✅ FIXED: Convert specialOffer object to specialOffers array
+    specialOffers: Array.isArray(initialData.specialOffers) && initialData.specialOffers.length > 0 
+      ? initialData.specialOffers 
+      : [{
+          title: "Special Offer",
+          description: "",
+          discountType: "percentage",
+          discountValue: 0,
+          validFrom: "",
+          validUntil: "",
+          isActive: false
+        }],
+    nextBatchStartDate: initialData.nextBatchStartDate || ""
   } : null;
 
   const [formData, setFormData] = useState(normalizedInitialData || {
@@ -73,7 +86,18 @@ export default function CourseForm({
     thumbnail: "",
     promoVideo: "",
     gallery: [],
-    videoCollections: []
+    videoCollections: [],
+    // ✅ FIXED: Use specialOffers (array) instead of specialOffer (object)
+    specialOffers: [{
+      title: "Special Offer",
+      description: "",
+      discountType: "percentage",
+      discountValue: 0,
+      validFrom: "",
+      validUntil: "",
+      isActive: false
+    }],
+    nextBatchStartDate: ""
   });
 
   const isEditMode = mode === "edit";
@@ -93,10 +117,37 @@ export default function CourseForm({
     }));
   };
 
+  // ✅ FIXED: Handle special offers array changes
+  const handleSpecialOfferChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      specialOffers: prev.specialOffers.map((offer, i) => 
+        i === index ? { ...offer, [field]: value } : offer
+      )
+    }));
+  };
+
+  // ✅ FIXED: Update offer calculation for array structure
+  const handleDiscountChange = (index, value) => {
+    const discountValue = parseInt(value) || 0;
+    const baseFees = parseInt(formData.baseFees) || 0;
+    
+    setFormData(prev => ({
+      ...prev,
+      specialOffers: prev.specialOffers.map((offer, i) => 
+        i === index ? { 
+          ...offer, 
+          discountValue,
+          // You can calculate discounted price here if needed
+        } : offer
+      )
+    }));
+  };
+
   // ✅ FIXED: Wrap updateSyllabus with useCallback to prevent infinite re-renders
   const updateSyllabus = useCallback((syllabus) => {
     setFormData(prev => ({ ...prev, syllabus }));
-  }, []); // Empty dependency array since setFormData is stable
+  }, []);
 
   const handleArrayChange = (arrayName, index, field, value) => {
     setFormData(prev => ({
@@ -104,6 +155,16 @@ export default function CourseForm({
       [arrayName]: prev[arrayName].map((item, i) => 
         i === index ? { ...item, [field]: value } : item
       )
+    }));
+  };
+
+  // FIXED: Handle gallery URL changes properly
+  const handleGalleryChange = (index, value) => {
+    const updatedGallery = [...formData.gallery];
+    updatedGallery[index] = value;
+    setFormData(prev => ({
+      ...prev,
+      gallery: updatedGallery
     }));
   };
 
@@ -129,13 +190,13 @@ export default function CourseForm({
       const url = isEditMode ? `/api/courses/${initialData._id}` : '/api/courses';
       const method = isEditMode ? 'PUT' : 'POST';
 
-      // Clean and prepare data for submission - MAKE SURE SYLLABUS IS INCLUDED
+      // Clean and prepare data for submission
       const submitData = {
         ...formData,
         
         // ✅ Ensure syllabus is included and properly structured
         syllabus: (formData.syllabus || []).map((day, index) => ({
-          _id: day._id || undefined, // Keep existing ID for updates
+          _id: day._id || undefined,
           dayNumber: day.dayNumber || index + 1,
           dayTitle: day.dayTitle || `Day ${index + 1}`,
           totalDuration: day.totalDuration || 0,
@@ -163,7 +224,22 @@ export default function CourseForm({
           }))
         })),
 
-        // ... rest of your data cleaning (equipmentUsed, softwareUsed, etc.)
+        // ✅ FIXED: Process special offers as array
+        specialOffers: (formData.specialOffers || [])
+          .filter(offer => offer.isActive) // Only include active offers
+          .map(offer => ({
+            title: offer.title?.trim() || "Special Offer",
+            description: offer.description?.trim() || "",
+            discountType: offer.discountType || "percentage",
+            discountValue: parseInt(offer.discountValue) || 0,
+            validFrom: offer.validFrom || null,
+            validUntil: offer.validUntil || null,
+            isActive: Boolean(offer.isActive)
+          })),
+
+        nextBatchStartDate: formData.nextBatchStartDate || "",
+
+        // ... rest of your data cleaning
         equipmentUsed: (formData.equipmentUsed || [])
           .filter(eq => eq.name && eq.name.trim() !== "")
           .map(eq => ({
@@ -234,8 +310,11 @@ export default function CourseForm({
         baseFees: parseInt(formData.baseFees) || 0
       };
 
-      console.log("Submitting course data:", submitData);
-      console.log("Syllabus being submitted:", submitData.syllabus);
+      console.log("🎯 FINAL SUBMIT DATA:", {
+        specialOffers: submitData.specialOffers,
+        nextBatchStartDate: submitData.nextBatchStartDate,
+        baseFees: submitData.baseFees
+      });
 
       const response = await fetch(url, {
         method,
@@ -341,6 +420,8 @@ export default function CourseForm({
               formData={formData} 
               onInputChange={handleInputChange}
               onNestedChange={handleNestedChange}
+              onSpecialOfferChange={handleSpecialOfferChange}
+              onDiscountChange={handleDiscountChange}
             />
           )}
 
@@ -371,6 +452,7 @@ export default function CourseForm({
               onArrayChange={handleArrayChange}
               onAddArrayItem={addArrayItem}
               onRemoveArrayItem={removeArrayItem}
+              onGalleryChange={handleGalleryChange}
             />
           )}
 
@@ -444,8 +526,19 @@ export default function CourseForm({
   );
 }
 
-// Basic Info Tab
-function BasicInfoTab({ formData, onInputChange, onNestedChange }) {
+// Basic Info Tab - Updated with special offers array
+function BasicInfoTab({ formData, onInputChange, onNestedChange, onSpecialOfferChange, onDiscountChange }) {
+  // Get the first special offer (we'll work with one offer for simplicity)
+  const currentOffer = formData.specialOffers?.[0] || {
+    title: "Special Offer",
+    description: "",
+    discountType: "percentage",
+    discountValue: 0,
+    validFrom: "",
+    validUntil: "",
+    isActive: false
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Basic Information</h2>
@@ -612,6 +705,119 @@ function BasicInfoTab({ formData, onInputChange, onNestedChange }) {
         </div>
       </div>
 
+      {/* Special Offer Section - UPDATED for array structure */}
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Special Offer</h3>
+        <div className="space-y-4">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={currentOffer.isActive || false}
+              onChange={(e) => onSpecialOfferChange(0, 'isActive', e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="ml-2 text-sm text-gray-700">Enable Special Offer</span>
+          </label>
+
+          {currentOffer.isActive && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Offer Title
+                </label>
+                <input
+                  type="text"
+                  value={currentOffer.title || "Special Offer"}
+                  onChange={(e) => onSpecialOfferChange(0, 'title', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Special Offer Title"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Discount Type
+                </label>
+                <select
+                  value={currentOffer.discountType || "percentage"}
+                  onChange={(e) => onSpecialOfferChange(0, 'discountType', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="percentage">Percentage</option>
+                  <option value="fixed">Fixed Amount</option>
+                  <option value="early-bird">Early Bird</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Discount Value
+                </label>
+                <input
+                  type="number"
+                  value={currentOffer.discountValue || 0}
+                  onChange={(e) => onDiscountChange(0, e.target.value)}
+                  min="0"
+                  max={currentOffer.discountType === "percentage" ? "100" : ""}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Valid From
+                </label>
+                <input
+                  type="date"
+                  value={currentOffer.validFrom || ""}
+                  onChange={(e) => onSpecialOfferChange(0, 'validFrom', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Valid Until
+                </label>
+                <input
+                  type="date"
+                  value={currentOffer.validUntil || ""}
+                  onChange={(e) => onSpecialOfferChange(0, 'validUntil', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Offer Description
+                </label>
+                <input
+                  type="text"
+                  value={currentOffer.description || ""}
+                  onChange={(e) => onSpecialOfferChange(0, 'description', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Offer description"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Next Batch Start Date */}
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Batch Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Next Batch Start Date
+            </label>
+            <input
+              type="date"
+              name="nextBatchStartDate"
+              value={formData.nextBatchStartDate || ""}
+              onChange={onInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Short Description *
@@ -646,7 +852,7 @@ function BasicInfoTab({ formData, onInputChange, onNestedChange }) {
   );
 }
 
-// Equipment & Software Tab
+// Equipment & Software Tab (unchanged)
 function EquipmentSoftwareTab({ formData, onArrayChange, onAddArrayItem, onRemoveArrayItem }) {
   const safeEquipmentUsed = Array.isArray(formData.equipmentUsed) ? formData.equipmentUsed : [];
   const safeSoftwareUsed = Array.isArray(formData.softwareUsed) ? formData.softwareUsed : [];
@@ -780,8 +986,8 @@ function EquipmentSoftwareTab({ formData, onArrayChange, onAddArrayItem, onRemov
   );
 }
 
-// Media & Videos Tab
-function MediaVideosTab({ formData, setFormData, onInputChange, onArrayChange, onAddArrayItem, onRemoveArrayItem }) {
+// Media & Videos Tab - Fixed gallery URL handling
+function MediaVideosTab({ formData, setFormData, onInputChange, onArrayChange, onAddArrayItem, onRemoveArrayItem, onGalleryChange }) {
   // Ensure arrays are always defined
   const safeGallery = Array.isArray(formData.gallery) ? formData.gallery : [];
   const safeVideoCollections = Array.isArray(formData.videoCollections) ? formData.videoCollections : [];
@@ -875,7 +1081,7 @@ function MediaVideosTab({ formData, setFormData, onInputChange, onArrayChange, o
         </div>
       </div>
 
-      {/* Gallery Images */}
+      {/* Gallery Images - FIXED URL handling */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Gallery Images</h3>
         {safeGallery.map((image, index) => (
@@ -883,7 +1089,7 @@ function MediaVideosTab({ formData, setFormData, onInputChange, onArrayChange, o
             <input
               type="url"
               value={image}
-              onChange={(e) => onArrayChange('gallery', index, '', e.target.value)}
+              onChange={(e) => onGalleryChange(index, e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="https://example.com/gallery-image.jpg"
             />
@@ -1122,9 +1328,10 @@ function MediaVideosTab({ formData, setFormData, onInputChange, onArrayChange, o
   );
 }
 
-// Course Details Tab
+// Course Details Tab - Updated for specialOffers array
 function CourseDetailsTab({ formData, setFormData }) {
   const safePrerequisites = Array.isArray(formData.prerequisites) ? formData.prerequisites : [];
+  const currentOffer = formData.specialOffers?.[0] || {};
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 space-y-8">
@@ -1226,6 +1433,12 @@ function CourseDetailsTab({ formData, setFormData }) {
             <p><strong>Duration:</strong> {formData.duration.totalDays || 0} days ({formData.duration.totalHours || 0} hours)</p>
             <p><strong>Level:</strong> {formData.level}</p>
             <p><strong>Price:</strong> ₹{formData.baseFees}</p>
+            {currentOffer.isActive && (
+              <p><strong>Special Offer:</strong> {currentOffer.discountValue}% off</p>
+            )}
+            {formData.nextBatchStartDate && (
+              <p><strong>Next Batch:</strong> {new Date(formData.nextBatchStartDate).toLocaleDateString()}</p>
+            )}
             <p><strong>Syllabus Days:</strong> {formData.syllabus?.length || 0}</p>
             <p><strong>Video Collections:</strong> {formData.videoCollections?.length || 0}</p>
             <p><strong>Equipment Items:</strong> {formData.equipmentUsed?.length || 0}</p>
