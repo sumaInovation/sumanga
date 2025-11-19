@@ -513,7 +513,7 @@ export default async function ProductPage({ params }) {
   const productSchema = generateProductSchema(product, slug);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-blue-50/30">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -588,7 +588,7 @@ export default async function ProductPage({ params }) {
           <div className="space-y-4 sm:space-y-6 order-2">
             {/* Title and Brand */}
             <div className="space-y-2 sm:space-y-3">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight break-words">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight wrap-break-word">
                 {product.name}
               </h1>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -615,7 +615,7 @@ export default async function ProductPage({ params }) {
             )}
 
             {/* Pricing - Mobile Optimized */}
-            <div className="space-y-2 sm:space-y-3 bg-gradient-to-r from-white to-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+            <div className="space-y-2 sm:space-y-3 bg-linear-to-r from-white to-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3">
                 <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
                   {product.currency} {product.price?.toLocaleString()}
@@ -668,7 +668,7 @@ export default async function ProductPage({ params }) {
                 <ul className="text-gray-700 space-y-2 sm:space-y-3">
                   {product.features.slice(0, 5).map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <span className="text-green-500 text-lg mt-0.5 flex-shrink-0">✓</span>
+                      <span className="text-green-500 text-lg mt-0.5 shrink-0">✓</span>
                       <span className="text-sm sm:text-base">{feature}</span>
                     </li>
                   ))}

@@ -1,3 +1,4 @@
+
 // components/Navbar.js
 "use client";
 
@@ -10,11 +11,9 @@ export default function Navbar() {
   const [isDesktopDropdownOpen, setIsDesktopDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCoursesDropdownOpen, setIsCoursesDropdownOpen] = useState(false);
   const desktopDropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
-  const coursesDropdownRef = useRef(null);
 
   // Role checks
   const isAdmin = session?.user?.role === "admin";
@@ -37,9 +36,6 @@ export default function Navbar() {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
         setIsMobileMenuOpen(false);
       }
-      if (coursesDropdownRef.current && !coursesDropdownRef.current.contains(event.target)) {
-        setIsCoursesDropdownOpen(false);
-      }
     }
 
     function handleEscapeKey(event) {
@@ -47,7 +43,6 @@ export default function Navbar() {
         setIsDesktopDropdownOpen(false);
         setIsMobileDropdownOpen(false);
         setIsMobileMenuOpen(false);
-        setIsCoursesDropdownOpen(false);
       }
     }
 
@@ -144,123 +139,6 @@ export default function Navbar() {
               Courses
             </Link>
 
-            {/* Courses Dropdown - For Staff/Admin/Instructor */}
-            {(isStaff || isInstructor) && (
-              <div className="relative" ref={coursesDropdownRef}>
-                <button
-                  onClick={() => setIsCoursesDropdownOpen(!isCoursesDropdownOpen)}
-                  className="flex items-center gap-1 text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
-                  aria-expanded={isCoursesDropdownOpen}
-                >
-                  <span>Course Control</span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${isCoursesDropdownOpen ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {isCoursesDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    {/* Instructor Level Access */}
-                    {isInstructor && (
-                      <>
-                        <Link 
-                          href="/instructor/courses" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>📚</span>
-                          My Courses
-                        </Link>
-                        <Link 
-                          href="/instructor/courses/create" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>➕</span>
-                          Create Course
-                        </Link>
-                        <Link 
-                          href="/instructor/students" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>👥</span>
-                          My Students
-                        </Link>
-                        <div className="border-t border-gray-200 my-1"></div>
-                      </>
-                    )}
-
-                    {/* Staff Level Access */}
-                    {isStaff && (
-                      <>
-                        <Link 
-                          href="/staff/courses" 
-                          className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors flex items-center gap-2 border-l-2 border-green-500 ml-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>🛠️</span>
-                          Manage Courses
-                        </Link>
-                        <Link 
-                          href="/staff/students" 
-                          className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors flex items-center gap-2 border-l-2 border-green-500 ml-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>📊</span>
-                          Student Management
-                        </Link>
-                        <Link 
-                          href="/staff/enrollments" 
-                          className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors flex items-center gap-2 border-l-2 border-green-500 ml-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>🎫</span>
-                          Enrollment Requests
-                        </Link>
-                        <div className="border-t border-gray-200 my-1"></div>
-                      </>
-                    )}
-
-                    {/* Admin Level Access */}
-                    {isAdmin && (
-                      <>
-                        <Link 
-                          href="/admin/courses" 
-                          className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2 border-l-2 border-red-500 ml-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>⚙️</span>
-                          All Courses
-                        </Link>
-                        <Link 
-                          href="/admin/instructors" 
-                          className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2 border-l-2 border-red-500 ml-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>👨‍🏫</span>
-                          Instructor Management
-                        </Link>
-                        <Link 
-                          href="/admin/analytics" 
-                          className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors flex items-center gap-2 border-l-2 border-red-500 ml-2"
-                          onClick={() => setIsCoursesDropdownOpen(false)}
-                        >
-                          <span>📈</span>
-                          Course Analytics
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
             <Link 
               href="/about" 
               className="text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
@@ -349,7 +227,7 @@ export default function Navbar() {
                     {/* Student Dashboard Link */}
                     <Link 
                       href="/student/dashboard" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors items-center gap-2"
                       onClick={() => setIsDesktopDropdownOpen(false)}
                       role="menuitem"
                     >
@@ -370,7 +248,7 @@ export default function Navbar() {
                     {isInstructor && (
                       <Link 
                         href="/instructor/dashboard" 
-                        className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 border-l-2 border-purple-500 ml-2 transition-colors flex items-center gap-2"
+                        className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 border-l-2 border-purple-500 ml-2 transition-colors items-center gap-2"
                         onClick={() => setIsDesktopDropdownOpen(false)}
                         role="menuitem"
                       >
@@ -382,7 +260,7 @@ export default function Navbar() {
                     {isStaff && (
                       <Link 
                         href="/staff/dashboard" 
-                        className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 border-l-2 border-green-500 ml-2 transition-colors flex items-center gap-2"
+                        className="px-4 py-2 text-sm text-green-700 hover:bg-green-50 border-l-2 border-green-500 ml-2 transition-colors flex items-center gap-2"
                         onClick={() => setIsDesktopDropdownOpen(false)}
                         role="menuitem"
                       >
@@ -394,7 +272,7 @@ export default function Navbar() {
                     {isAdmin && (
                       <Link 
                         href="/admin" 
-                        className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-2 border-red-500 ml-2 transition-colors flex items-center gap-2"
+                        className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-2 border-red-500 ml-2 transition-colors items-center gap-2"
                         onClick={() => setIsDesktopDropdownOpen(false)}
                         role="menuitem"
                       >
@@ -409,7 +287,7 @@ export default function Navbar() {
                         setIsDesktopDropdownOpen(false); 
                         handleLogout(); 
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors items-center gap-2"
                       role="menuitem"
                     >
                       <span>🚪</span>
@@ -474,44 +352,27 @@ export default function Navbar() {
                       </div>
                     </div>
                     
-                    <Link href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🏠 Home</Link>
-                    <Link href="/courses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📚 Courses</Link>
-                    <Link href="/student/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🎓 My Learning</Link>
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📊 Dashboard</Link>
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>👤 Profile</Link>
+                    <Link href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🏠 Home</Link>
+                    <Link href="/courses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📚 Courses</Link>
+                    <Link href="/student/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🎓 My Learning</Link>
+                    <Link href="/dashboard" className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📊 Dashboard</Link>
+                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>👤 Profile</Link>
                     
-                    {/* Course Control Section for Mobile */}
-                    {(isStaff || isInstructor) && (
-                      <>
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Course Control</div>
-                        
-                        {isInstructor && (
-                          <>
-                            <Link href="/instructor/courses" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2 border-l-2 border-purple-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>📚 My Courses</Link>
-                            <Link href="/instructor/courses/create" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2 border-l-2 border-purple-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>➕ Create Course</Link>
-                          </>
-                        )}
-                        
-                        {isStaff && (
-                          <>
-                            <Link href="/staff/courses" className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 border-l-2 border-green-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>🛠️ Manage Courses</Link>
-                            <Link href="/staff/students" className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2 border-l-2 border-green-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>📊 Students</Link>
-                          </>
-                        )}
-                        
-                        {isAdmin && (
-                          <>
-                            <Link href="/admin/courses" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ All Courses</Link>
-                            <Link href="/admin/instructors" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>👨‍🏫 Instructors</Link>
-                            <Link href="/admin" className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ Admin Dashboard</Link>
-                          </>
-                        )}
-                      </>
+                    {/* Instructor, Staff, and Admin Links for Mobile */}
+                    {isInstructor && (
+                      <Link href="/instructor/dashboard" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 items-center gap-2 border-l-2 border-purple-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>👨‍🏫 Instructor</Link>
+                    )}
+                    
+                    {isStaff && (
+                      <Link href="/staff/dashboard" className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 items-center gap-2 border-l-2 border-green-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>🛠️ Staff</Link>
+                    )}
+                    
+                    {isAdmin && (
+                      <Link href="/admin" className="px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ Admin</Link>
                     )}
                     
                     <div className="border-t border-gray-100 my-1"></div>
-                    <button onClick={() => { setIsMobileDropdownOpen(false); handleLogout(); }} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                    <button onClick={() => { setIsMobileDropdownOpen(false); handleLogout(); }} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 items-center gap-2">
                       <span>🚪</span>
                       Sign out
                     </button>
