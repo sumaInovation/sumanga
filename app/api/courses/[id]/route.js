@@ -104,12 +104,13 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    // ✅ FIX: Await the params promise
     const { id } = await params;
     
     await connectDB();
     
     const updates = await request.json();
+
+    console.log('🔄 Updating course with syllabus:', updates.syllabus);
 
     const course = await Course.findByIdAndUpdate(
       id,

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import CourseSyllabusBuilder from "./CourseSyllabusBuilder";
@@ -93,9 +93,10 @@ export default function CourseForm({
     }));
   };
 
-  const updateSyllabus = (syllabus) => {
+  // ✅ FIXED: Wrap updateSyllabus with useCallback to prevent infinite re-renders
+  const updateSyllabus = useCallback((syllabus) => {
     setFormData(prev => ({ ...prev, syllabus }));
-  };
+  }, []); // Empty dependency array since setFormData is stable
 
   const handleArrayChange = (arrayName, index, field, value) => {
     setFormData(prev => ({
@@ -128,10 +129,41 @@ export default function CourseForm({
       const url = isEditMode ? `/api/courses/${initialData._id}` : '/api/courses';
       const method = isEditMode ? 'PUT' : 'POST';
 
-      // Clean and prepare data for submission
+      // Clean and prepare data for submission - MAKE SURE SYLLABUS IS INCLUDED
       const submitData = {
         ...formData,
-        // Clean empty arrays and filter valid items
+        
+        // ✅ Ensure syllabus is included and properly structured
+        syllabus: (formData.syllabus || []).map((day, index) => ({
+          _id: day._id || undefined, // Keep existing ID for updates
+          dayNumber: day.dayNumber || index + 1,
+          dayTitle: day.dayTitle || `Day ${index + 1}`,
+          totalDuration: day.totalDuration || 0,
+          items: (day.items || []).map((item, itemIndex) => ({
+            _id: item._id || undefined,
+            title: item.title || '',
+            duration: parseInt(item.duration) || 0,
+            type: item.type || 'theory',
+            description: item.description || '',
+            videoLecture: item.videoLecture ? {
+              title: item.videoLecture.title || '',
+              videoUrl: item.videoLecture.videoUrl || '',
+              duration: parseInt(item.videoLecture.duration) || 0,
+              description: item.videoLecture.description || '',
+              isPreview: item.videoLecture.isPreview || false,
+              thumbnail: item.videoLecture.thumbnail || '',
+              uploadedAt: item.videoLecture.uploadedAt || new Date()
+            } : undefined,
+            resources: (item.resources || []).map(resource => ({
+              name: resource.name || '',
+              url: resource.url || '',
+              type: resource.type || 'document',
+              size: resource.size || ''
+            }))
+          }))
+        })),
+
+        // ... rest of your data cleaning (equipmentUsed, softwareUsed, etc.)
         equipmentUsed: (formData.equipmentUsed || [])
           .filter(eq => eq.name && eq.name.trim() !== "")
           .map(eq => ({
@@ -171,13 +203,13 @@ export default function CourseForm({
         videoCollections: (formData.videoCollections || [])
           .filter(collection => collection.title && collection.title.trim() !== "")
           .map(collection => ({
-            _id: collection._id, // Keep existing ID for updates
+            _id: collection._id,
             title: collection.title.trim(),
             description: collection.description?.trim() || "",
             videos: (collection.videos || [])
               .filter(video => video.title && video.title.trim() !== "")
               .map(video => ({
-                _id: video._id, // Keep existing ID for updates
+                _id: video._id,
                 title: video.title.trim(),
                 videoUrl: video.videoUrl?.trim() || "",
                 duration: parseInt(video.duration) || 0,
@@ -191,7 +223,6 @@ export default function CourseForm({
           .filter(image => image && image.trim() !== "")
           .map(image => image.trim()),
         
-        // Ensure duration values are numbers
         duration: {
           totalDays: parseInt(formData.duration.totalDays) || 0,
           totalHours: parseInt(formData.duration.totalHours) || 0,
@@ -200,11 +231,11 @@ export default function CourseForm({
           perDayHours: parseInt(formData.duration.perDayHours) || 3
         },
         
-        // Ensure baseFees is a number
         baseFees: parseInt(formData.baseFees) || 0
       };
 
       console.log("Submitting course data:", submitData);
+      console.log("Syllabus being submitted:", submitData.syllabus);
 
       const response = await fetch(url, {
         method,
@@ -224,10 +255,6 @@ export default function CourseForm({
         alert(`Course ${isEditMode ? 'updated' : 'created'} successfully!`);
         if (onSuccess) {
           onSuccess(data.course);
-        }
-        // Refresh the page to ensure clean state
-        if (isEditMode) {
-          router.refresh();
         }
       } else {
         throw new Error(data.error || `Failed to ${isEditMode ? 'update' : 'create'} course`);
@@ -417,7 +444,7 @@ export default function CourseForm({
   );
 }
 
-// Basic Info Tab (unchanged)
+// Basic Info Tab
 function BasicInfoTab({ formData, onInputChange, onNestedChange }) {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
@@ -619,7 +646,7 @@ function BasicInfoTab({ formData, onInputChange, onNestedChange }) {
   );
 }
 
-// Equipment & Software Tab (unchanged)
+// Equipment & Software Tab
 function EquipmentSoftwareTab({ formData, onArrayChange, onAddArrayItem, onRemoveArrayItem }) {
   const safeEquipmentUsed = Array.isArray(formData.equipmentUsed) ? formData.equipmentUsed : [];
   const safeSoftwareUsed = Array.isArray(formData.softwareUsed) ? formData.softwareUsed : [];
@@ -753,7 +780,7 @@ function EquipmentSoftwareTab({ formData, onArrayChange, onAddArrayItem, onRemov
   );
 }
 
-// Media & Videos Tab - FIXED VERSION
+// Media & Videos Tab
 function MediaVideosTab({ formData, setFormData, onInputChange, onArrayChange, onAddArrayItem, onRemoveArrayItem }) {
   // Ensure arrays are always defined
   const safeGallery = Array.isArray(formData.gallery) ? formData.gallery : [];
@@ -1095,7 +1122,7 @@ function MediaVideosTab({ formData, setFormData, onInputChange, onArrayChange, o
   );
 }
 
-// Course Details Tab (unchanged)
+// Course Details Tab
 function CourseDetailsTab({ formData, setFormData }) {
   const safePrerequisites = Array.isArray(formData.prerequisites) ? formData.prerequisites : [];
 

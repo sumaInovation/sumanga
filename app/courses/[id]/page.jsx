@@ -27,6 +27,20 @@ async function getCourse(id) {
   }
 }
 
+// Function to extract YouTube ID from URL
+function getYouTubeId(url) {
+  if (!url) return null;
+  
+  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[7].length === 11) ? match[7] : null;
+}
+
+// Function to check if URL is a YouTube URL
+function isYouTubeUrl(url) {
+  return url?.includes('youtube.com') || url?.includes('youtu.be');
+}
+
 export default async function CourseDetailPage({ params }) {
   try {
     const { id } = await params;
@@ -157,6 +171,170 @@ export default async function CourseDetailPage({ params }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
+              {/* Course Thumbnail & Promo Video */}
+              {(course.thumbnail || course.promoVideo) && (
+                <section className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Media</h2>
+                  <div className="space-y-6">
+                    {course.thumbnail && (
+                      <div>
+                        <h3 className="font-semibold text-lg mb-3">Course Thumbnail</h3>
+                        <img 
+                          src={course.thumbnail} 
+                          alt={course.title}
+                          className="w-full max-w-md rounded-lg shadow-sm"
+                        />
+                      </div>
+                    )}
+                    {course.promoVideo && (
+                      <div>
+                        <h3 className="font-semibold text-lg mb-3">Promotional Video</h3>
+                        {isYouTubeUrl(course.promoVideo) ? (
+                          <div className="aspect-w-16 aspect-h-9">
+                            <iframe
+                              src={`https://www.youtube.com/embed/${getYouTubeId(course.promoVideo)}`}
+                              title="Promotional Video"
+                              className="w-full h-64 md:h-80 lg:h-96 rounded-lg shadow-sm"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        ) : (
+                          <div className="aspect-w-16 aspect-h-9">
+                            <video 
+                              controls 
+                              className="w-full rounded-lg shadow-sm"
+                              poster={course.thumbnail}
+                            >
+                              <source src={course.promoVideo} type="video/mp4" />
+                              <source src={course.promoVideo} type="video/webm" />
+                              <source src={course.promoVideo} type="video/ogg" />
+                              Your browser does not support the video tag.
+                            </video>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {/* Video Collections */}
+              {course.videoCollections?.length > 0 && (
+                <section className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Video Collections</h2>
+                  <div className="space-y-6">
+                    {course.videoCollections.map((collection, index) => (
+                      <div key={collection._id || index} className="border rounded-lg p-4">
+                        <h3 className="font-semibold text-lg mb-3">{collection.title}</h3>
+                        {collection.description && (
+                          <p className="text-gray-600 mb-4">{collection.description}</p>
+                        )}
+                        
+                        {collection.videos?.length > 0 ? (
+                          <div className="space-y-4">
+                            {collection.videos.map((video, videoIndex) => (
+                              <div key={video._id || videoIndex} className="border rounded-lg p-4 bg-gray-50">
+                                <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-gray-900 text-lg">{video.title}</h4>
+                                    {video.description && (
+                                      <p className="text-gray-600 mt-2">{video.description}</p>
+                                    )}
+                                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                                      <span>Duration: {video.duration} minutes</span>
+                                      <span className={`px-2 py-1 rounded-full text-xs ${
+                                        video.accessLevel === 'free' ? 'bg-green-100 text-green-800' :
+                                        video.accessLevel === 'preview' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-purple-100 text-purple-800'
+                                      }`}>
+                                        {video.accessLevel === 'free' ? 'Free Access' :
+                                         video.accessLevel === 'preview' ? 'Preview' : 'Enrolled Students Only'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {session?.user && (
+                                    <div className="lg:w-48">
+                                      {isYouTubeUrl(video.videoUrl) ? (
+                                        <a
+                                          href={video.videoUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="w-full bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700 flex items-center justify-center gap-2"
+                                        >
+                                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                                          </svg>
+                                          Watch on YouTube
+                                        </a>
+                                      ) : (
+                                        <button className="w-full bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+                                          Watch Video
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Video Preview/Player */}
+                                {session?.user && video.accessLevel !== 'enrolled' && (
+                                  <div className="mt-4">
+                                    {isYouTubeUrl(video.videoUrl) ? (
+                                      <div className="aspect-w-16 aspect-h-9">
+                                        <iframe
+                                          src={`https://www.youtube.com/embed/${getYouTubeId(video.videoUrl)}`}
+                                          title={video.title}
+                                          className="w-full h-48 md:h-64 rounded-lg shadow-sm"
+                                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                          allowFullScreen
+                                        ></iframe>
+                                      </div>
+                                    ) : (
+                                      <div className="aspect-w-16 aspect-h-9">
+                                        <video 
+                                          controls 
+                                          className="w-full rounded-lg shadow-sm"
+                                          poster={video.thumbnail}
+                                        >
+                                          <source src={video.videoUrl} type="video/mp4" />
+                                          <source src={video.videoUrl} type="video/webm" />
+                                          <source src={video.videoUrl} type="video/ogg" />
+                                          Your browser does not support the video tag.
+                                        </video>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">No videos in this collection yet.</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Gallery */}
+              {course.gallery?.length > 0 && (
+                <section className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Gallery</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {course.gallery.map((image, index) => (
+                      <div key={index} className="aspect-square overflow-hidden rounded-lg border">
+                        <img 
+                          src={image} 
+                          alt={`Gallery image ${index + 1}`}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* Syllabus Section */}
               <section className="bg-white rounded-lg shadow-sm border p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Syllabus</h2>
@@ -176,6 +354,9 @@ export default async function CourseDetailPage({ params }) {
                               <div>
                                 <p className="font-medium">{item.title}</p>
                                 <p className="text-sm text-gray-500 capitalize">{item.type}</p>
+                                {item.description && (
+                                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                )}
                               </div>
                               <span className="text-sm text-gray-500">{item.duration} min</span>
                             </div>
@@ -189,26 +370,53 @@ export default async function CourseDetailPage({ params }) {
                 )}
               </section>
 
-              {/* Equipment & Requirements - Only show if data exists */}
-              {(course.equipmentUsed?.length > 0 || course.prerequisites?.length > 0) && (
+              {/* Equipment & Software */}
+              {(course.equipmentUsed?.length > 0 || course.softwareUsed?.length > 0 || course.prerequisites?.length > 0) && (
                 <section className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Equipment & Requirements</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Requirements & Prerequisites</h2>
+                  
                   {course.equipmentUsed?.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-2">Equipment Used:</h3>
-                      <ul className="list-disc list-inside space-y-1">
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-lg mb-3">Equipment Used</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {course.equipmentUsed.map((equipment, index) => (
-                          <li key={index} className="text-gray-600">
-                            {equipment.name} {equipment.quantity && `(${equipment.quantity})`}
-                          </li>
+                          <div key={index} className="border rounded p-3 bg-gray-50">
+                            <p className="font-medium">{equipment.name}</p>
+                            {equipment.description && (
+                              <p className="text-sm text-gray-600 mt-1">{equipment.description}</p>
+                            )}
+                            {equipment.quantity && (
+                              <p className="text-sm text-gray-500 mt-1">Quantity: {equipment.quantity}</p>
+                            )}
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   )}
+
+                  {course.softwareUsed?.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-lg mb-3">Software Used</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {course.softwareUsed.map((software, index) => (
+                          <div key={index} className="border rounded p-3 bg-gray-50">
+                            <p className="font-medium">{software.name}</p>
+                            {software.version && (
+                              <p className="text-sm text-gray-600">Version: {software.version}</p>
+                            )}
+                            {software.description && (
+                              <p className="text-sm text-gray-600 mt-1">{software.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {course.prerequisites?.length > 0 && (
                     <div>
-                      <h3 className="font-semibold mb-2">Prerequisites:</h3>
-                      <ul className="list-disc list-inside space-y-1">
+                      <h3 className="font-semibold text-lg mb-3">Prerequisites</h3>
+                      <ul className="list-disc list-inside space-y-2">
                         {course.prerequisites.map((prereq, index) => (
                           <li key={index} className="text-gray-600">{prereq}</li>
                         ))}
@@ -217,10 +425,89 @@ export default async function CourseDetailPage({ params }) {
                   )}
                 </section>
               )}
+
+              {/* Course Tags */}
+              {course.tags?.length > 0 && (
+                <section className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Course Tags</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {course.tags.map((tag, index) => (
+                      <span 
+                        key={index}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Course Details */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h3 className="font-semibold text-lg mb-4">Course Details</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Course Code:</span>
+                    <span className="font-medium">{course.code}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Category:</span>
+                    <span className="font-medium capitalize">{course.category?.replace('-', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Level:</span>
+                    <span className="font-medium capitalize">{course.level}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Language:</span>
+                    <span className="font-medium">{course.language}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Certificate:</span>
+                    <span className="font-medium">
+                      {course.certificateIncluded ? 'Included' : 'Not Included'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Duration Details */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h3 className="font-semibold text-lg mb-4">Duration Details</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Days:</span>
+                    <span className="font-medium">{course.duration?.totalDays || 0} days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Hours:</span>
+                    <span className="font-medium">{totalHours} hours</span>
+                  </div>
+                  {course.duration?.theoryHours > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Theory Hours:</span>
+                      <span className="font-medium">{course.duration.theoryHours} hours</span>
+                    </div>
+                  )}
+                  {course.duration?.practicalHours > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Practical Hours:</span>
+                      <span className="font-medium">{course.duration.practicalHours} hours</span>
+                    </div>
+                  )}
+                  {course.duration?.perDayHours > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Hours Per Day:</span>
+                      <span className="font-medium">{course.duration.perDayHours} hours</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Course Features */}
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="font-semibold text-lg mb-4">Course Features</h3>
@@ -243,6 +530,14 @@ export default async function CourseDetailPage({ params }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       Certificate of completion
+                    </li>
+                  )}
+                  {course.videoCollections?.length > 0 && (
+                    <li className="flex items-center text-sm text-gray-600">
+                      <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Video learning materials
                     </li>
                   )}
                 </ul>
