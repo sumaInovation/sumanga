@@ -15,20 +15,30 @@ export default function CourseManagementTab() {
     fetchCourses();
   }, []);
 
-  const fetchCourses = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/courses");
-      const data = await response.json();
-      if (data.success) {
-        setCourses(data.courses);
-      }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    } finally {
-      setLoading(false);
+ // components/admin/course/CourseManagementTab.jsx
+const fetchCourses = async () => {
+  setLoading(true);
+  try {
+    const response = await fetch("/api/admin/courses"); // Use admin endpoint
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
+    const data = await response.json();
+    
+    if (data.success) {
+      setCourses(data.courses);
+      console.log(`✅ Loaded ${data.courses.length} courses (admin view)`);
+    } else {
+      console.error("API error:", data.error);
+      alert(data.error || "Failed to fetch courses");
+    }
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    alert("Failed to load courses. Please check console for details.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleUpdateCourse = async (courseId, updates) => {
     setUpdatingCourseId(courseId);

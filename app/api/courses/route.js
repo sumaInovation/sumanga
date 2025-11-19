@@ -1,6 +1,9 @@
+
 // app/api/courses/route.js
 import { connectDB } from "@/lib/mongodb";
 import Course from "@/models/Course";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-options";
 
 // GET - Fetch all published courses (PUBLIC - no authentication)
 export async function GET() {
