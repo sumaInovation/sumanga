@@ -2,18 +2,36 @@
 // components/CourseSyllabusBuilder.js
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function CourseSyllabusBuilder({ syllabus, onSyllabusChange }) {
+export default function CourseSyllabusBuilder({ syllabus = [], onSyllabusChange }) {
+  // Ensure syllabus is always an array
+  const safeSyllabus = Array.isArray(syllabus) ? syllabus : [];
+  
   const [currentDay, setCurrentDay] = useState({
-    dayNumber: syllabus.length + 1,
+    dayNumber: 1,
     dayTitle: "",
     items: [{ title: "", duration: 0, type: "theory" }]
   });
 
+  // Update currentDay when syllabus changes
+  useEffect(() => {
+    setCurrentDay({
+      dayNumber: safeSyllabus.length + 1,
+      dayTitle: "",
+      items: [{ title: "", duration: 0, type: "theory" }]
+    });
+  }, [safeSyllabus.length]);
+
   const addDayToSyllabus = () => {
     if (currentDay.dayTitle && currentDay.items[0].title) {
-      const newSyllabus = [...syllabus, { ...currentDay }];
+      const newDay = {
+        ...currentDay,
+        _id: Date.now().toString(), // Temporary ID
+        totalDuration: currentDay.items.reduce((total, item) => total + (item.duration || 0), 0)
+      };
+      
+      const newSyllabus = [...safeSyllabus, newDay];
       onSyllabusChange(newSyllabus);
       setCurrentDay({
         dayNumber: currentDay.dayNumber + 1,
@@ -42,7 +60,7 @@ export default function CourseSyllabusBuilder({ syllabus, onSyllabusChange }) {
   };
 
   const removeDay = (dayIndex) => {
-    const newSyllabus = syllabus.filter((_, index) => index !== dayIndex);
+    const newSyllabus = safeSyllabus.filter((_, index) => index !== dayIndex);
     // Re-number days
     const renumberedSyllabus = newSyllabus.map((day, index) => ({
       ...day,
@@ -58,13 +76,91 @@ export default function CourseSyllabusBuilder({ syllabus, onSyllabusChange }) {
     }));
   };
 
+  // Function to edit existing day
+  const editDay = (dayIndex) => {
+    const dayToEdit = safeSyllabus[dayIndex];
+    setCurrentDay({
+      dayNumber: dayToEdit.dayNumber,
+      dayTitle: dayToEdit.dayTitle || "",
+      items: dayToEdit.items || [{ title: "", duration: 0, type: "theory" }]
+    });
+    
+    // Remove the day from syllabus (user will re-add it after editing)
+    const newSyllabus = safeSyllabus.filter((_, index) => index !== dayIndex);
+    onSyllabusChange(newSyllabus);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Syllabus Builder</h2>
       
+      {/* Syllabus Summary */}
+      {safeSyllabus.length > 0 && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Syllabus Summary</h3>
+          <p className="text-blue-800">
+            <strong>{safeSyllabus.length}</strong> day(s) planned • 
+            <strong> {safeSyllabus.reduce((total, day) => total + (day.totalDuration || day.items?.reduce((sum, item) => sum + (item.duration || 0), 0) || 0), 0)}</strong> total minutes
+          </p>
+        </div>
+      )}
+
+      {/* Existing Syllabus Days */}
+      {safeSyllabus.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Existing Syllabus Days ({safeSyllabus.length})</h3>
+          <div className="space-y-4">
+            {safeSyllabus.map((day, dayIndex) => (
+              <div key={day._id || dayIndex} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-lg font-semibold text-blue-600">
+                    Day {day.dayNumber}: {day.dayTitle}
+                  </h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => editDay(dayIndex)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => removeDay(dayIndex)}
+                      className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <ul className="space-y-2">
+                  {day.items?.map((item, itemIndex) => (
+                    <li key={itemIndex} className="flex items-center gap-3 text-sm">
+                      <span className={`w-20 px-2 py-1 rounded text-xs font-medium ${
+                        item.type === 'theory' ? 'bg-blue-100 text-blue-800' :
+                        item.type === 'practical' ? 'bg-green-100 text-green-800' :
+                        item.type === 'project' ? 'bg-purple-100 text-purple-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {item.type}
+                      </span>
+                      <span className="flex-1">{item.title}</span>
+                      <span className="text-gray-500">({item.duration}min)</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2 text-xs text-gray-500">
+                  Total: {day.items?.reduce((total, item) => total + (item.duration || 0), 0)} minutes
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Current Day Builder */}
       <div className="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg">
-        <h3 className="text-lg font-semibold mb-4">Add Day {currentDay.dayNumber}</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {safeSyllabus.length === 0 ? 'Create First Day' : 'Add New Day'} {currentDay.dayNumber}
+        </h3>
         
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Day Title</label>
@@ -109,13 +205,15 @@ export default function CourseSyllabusBuilder({ syllabus, onSyllabusChange }) {
                     <option value="demo">Demo</option>
                     <option value="assessment">Assessment</option>
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => removeItemFromCurrentDay(index)}
-                    className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
-                  >
-                    Remove
-                  </button>
+                  {currentDay.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItemFromCurrentDay(index)}
+                      className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -129,55 +227,26 @@ export default function CourseSyllabusBuilder({ syllabus, onSyllabusChange }) {
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={addDayToSyllabus}
-          className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
-        >
-          Add Day to Syllabus
-        </button>
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            Total for this day: {currentDay.items.reduce((sum, item) => sum + (item.duration || 0), 0)} minutes
+          </div>
+          <button
+            type="button"
+            onClick={addDayToSyllabus}
+            className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            {safeSyllabus.length === 0 ? 'Create First Day' : 'Add Day to Syllabus'}
+          </button>
+        </div>
       </div>
 
-      {/* Syllabus Preview */}
-      {syllabus.length > 0 && (
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Syllabus Preview ({syllabus.length} days)</h3>
-          <div className="space-y-4">
-            {syllabus.map((day, dayIndex) => (
-              <div key={dayIndex} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-lg font-semibold text-blue-600">
-                    Day {day.dayNumber}: {day.dayTitle}
-                  </h4>
-                  <button
-                    onClick={() => removeDay(dayIndex)}
-                    className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
-                  >
-                    Remove Day
-                  </button>
-                </div>
-                <ul className="space-y-2">
-                  {day.items.map((item, itemIndex) => (
-                    <li key={itemIndex} className="flex items-center gap-3 text-sm">
-                      <span className={`w-20 px-2 py-1 rounded text-xs font-medium ${
-                        item.type === 'theory' ? 'bg-blue-100 text-blue-800' :
-                        item.type === 'practical' ? 'bg-green-100 text-green-800' :
-                        item.type === 'project' ? 'bg-purple-100 text-purple-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {item.type}
-                      </span>
-                      <span>{item.title}</span>
-                      <span className="text-gray-500">({item.duration}min)</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-2 text-xs text-gray-500">
-                  Total: {day.items.reduce((total, item) => total + item.duration, 0)} minutes
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Empty State */}
+      {safeSyllabus.length === 0 && (
+        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+          <div className="text-4xl mb-4">📚</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Syllabus Days Added Yet</h3>
+          <p className="text-gray-600">Start by creating your first course day above</p>
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+
 // components/admin/course/CourseManagementTab.jsx
 "use client";
 
@@ -9,45 +10,85 @@ export default function CourseManagementTab() {
   const [loading, setLoading] = useState(true);
   const [updatingCourseId, setUpdatingCourseId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [loadingCourseDetails, setLoadingCourseDetails] = useState(false);
+  const [error, setError] = useState(null);
 
   // Fetch courses on component mount
   useEffect(() => {
     fetchCourses();
   }, []);
 
- // components/admin/course/CourseManagementTab.jsx
-const fetchCourses = async () => {
-  setLoading(true);
-  try {
-    const response = await fetch("/api/admin/courses"); // Use admin endpoint
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  const fetchCourses = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("🔄 Fetching courses list...");
+      const response = await fetch("/api/admin/courses");
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setCourses(data.courses);
+        console.log(`✅ Loaded ${data.courses.length} courses`);
+      } else {
+        throw new Error(data.error || "Failed to fetch courses");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching courses:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-    const data = await response.json();
-    
-    if (data.success) {
-      setCourses(data.courses);
-      console.log(`✅ Loaded ${data.courses.length} courses (admin view)`);
-    } else {
-      console.error("API error:", data.error);
-      alert(data.error || "Failed to fetch courses");
+  };
+
+  const fetchCourseDetails = async (courseId) => {
+    setLoadingCourseDetails(true);
+    setError(null);
+    try {
+      console.log(`🔄 Fetching course details for: ${courseId}`);
+      const response = await fetch(`/api/courses/${courseId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("✅ Full course details loaded");
+        console.log("📹 Video collections:", data.course.videoCollections);
+        return data.course;
+      } else {
+        throw new Error(data.error || "Failed to fetch course details");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching course details:", error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoadingCourseDetails(false);
     }
-  } catch (error) {
-    console.error("Error fetching courses:", error);
-    alert("Failed to load courses. Please check console for details.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleUpdateCourse = async (courseId, updates) => {
     setUpdatingCourseId(courseId);
+    setError(null);
     try {
       const response = await fetch(`/api/courses/${courseId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update course: ${response.status}`);
+      }
 
       const data = await response.json();
       if (data.success) {
@@ -57,57 +98,91 @@ const fetchCourses = async () => {
           )
         );
       } else {
-        alert(data.error || "Failed to update course");
+        throw new Error(data.error || "Failed to update course");
       }
     } catch (error) {
       console.error("Error updating course:", error);
-      alert("Failed to update course");
+      setError(error.message);
     } finally {
       setUpdatingCourseId(null);
     }
   };
 
   const handleDeleteCourse = async (courseId) => {
-  if (!confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/courses/${courseId}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Delete error response:', errorText);
-      throw new Error(`Failed to delete course: ${response.status}`);
+    if (!confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
+      return;
     }
 
-    const data = await response.json();
-    
-    if (data.success) {
-      setCourses(prevCourses => prevCourses.filter(course => course._id !== courseId));
-      alert('Course deleted successfully!');
-    } else {
-      alert(data.error || "Failed to delete course");
+    setError(null);
+    try {
+      const response = await fetch(`/api/courses/${courseId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete course: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCourses(prevCourses => prevCourses.filter(course => course._id !== courseId));
+        alert('Course deleted successfully!');
+      } else {
+        throw new Error(data.error || "Failed to delete course");
+      }
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      setError(error.message);
     }
-  } catch (error) {
-    console.error("Error deleting course:", error);
-    alert(error.message || "Failed to delete course");
-  }
-};
+  };
 
   const handleAddNewCourse = () => {
     setShowCreateForm(true);
+    setEditingCourse(null);
+    setError(null);
   };
+
+  const handleEditCourse = async (course) => {
+  setError(null);
+  try {
+    console.log("🎯 Starting to edit course:", course);
+    console.log("📋 Course ID:", course._id);
+    console.log("📋 Course title:", course.title);
+    
+    if (!course._id) {
+      throw new Error("Course ID is missing");
+    }
+
+    console.log("🔄 Fetching course details for ID:", course._id);
+    
+    const fullCourseData = await fetchCourseDetails(course._id);
+    
+    if (fullCourseData) {
+      console.log("✅ Full course data received:", fullCourseData);
+      console.log("📹 Video collections in received data:", fullCourseData.videoCollections);
+      setEditingCourse(fullCourseData);
+      setShowCreateForm(false);
+    } else {
+      throw new Error("No course data received from server");
+    }
+  } catch (error) {
+    console.error("❌ Error loading course details:", error);
+    setError("Failed to load course details: " + error.message);
+  }
+};
 
   const handleFormSuccess = () => {
     setShowCreateForm(false);
-    fetchCourses(); // Refresh the course list
+    setEditingCourse(null);
+    setError(null);
+    fetchCourses();
   };
 
-  const handleCancelCreate = () => {
+  const handleCancelForm = () => {
     setShowCreateForm(false);
+    setEditingCourse(null);
+    setError(null);
   };
 
   const getLevelBadge = (level) => {
@@ -120,22 +195,57 @@ const fetchCourses = async () => {
     }
   };
 
-  // Show Course Form when user clicks "Add New Course"
-  if (showCreateForm) {
+  // Get thumbnail URL with fallback
+  const getThumbnailUrl = (course) => {
+    if (course.thumbnail) return course.thumbnail;
+    
+    // Use placeholder service
+    const initials = course.title ? course.title.substring(0, 2).toUpperCase() : 'CO';
+    return `https://via.placeholder.com/150/3B82F6/FFFFFF?text=${encodeURIComponent(initials)}`;
+  };
+
+  // Show loading when fetching course details
+  if (loadingCourseDetails) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading course details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show Course Form when creating or editing
+  if (showCreateForm || editingCourse) {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Create New Course</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {editingCourse ? 'Edit Course' : 'Create New Course'}
+          </h2>
           <button 
-            onClick={handleCancelCreate}
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+            onClick={handleCancelForm}
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2"
           >
-            ← Back to Courses
+            <span>←</span>
+            Back to Courses
           </button>
         </div>
+        
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">
+              <strong>Error:</strong> {error}
+            </p>
+          </div>
+        )}
+        
         <CourseForm 
+          initialData={editingCourse}
+          mode={editingCourse ? "edit" : "create"}
           onSuccess={handleFormSuccess}
-          onCancel={handleCancelCreate}
+          onCancel={handleCancelForm}
         />
       </div>
     );
@@ -145,6 +255,7 @@ const fetchCourses = async () => {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3">Loading courses...</span>
       </div>
     );
   }
@@ -155,11 +266,26 @@ const fetchCourses = async () => {
         <h2 className="text-2xl font-bold text-gray-900">Course Management</h2>
         <button 
           onClick={handleAddNewCourse}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
-          + Create New Course
+          <span>+</span>
+          Create New Course
         </button>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">
+            <strong>Error:</strong> {error}
+          </p>
+          <button 
+            onClick={() => setError(null)}
+            className="mt-2 text-red-600 hover:text-red-800 text-sm"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       
       {courses.length === 0 ? (
         <div className="text-center py-12">
@@ -191,9 +317,6 @@ const fetchCourses = async () => {
                   Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Students
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -208,7 +331,7 @@ const fetchCourses = async () => {
                     <div className="flex items-center">
                       <img
                         className="h-10 w-10 rounded-lg object-cover"
-                        src={course.thumbnail || "/default-course-thumbnail.jpg"}
+                        src={getThumbnailUrl(course)}
                         alt={course.title}
                       />
                       <div className="ml-4">
@@ -228,9 +351,6 @@ const fetchCourses = async () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                     ₹{course.baseFees}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {course.enrolledStudents?.length || 0}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <select
                       value={course.isPublished ? 'published' : 'draft'}
@@ -245,18 +365,16 @@ const fetchCourses = async () => {
                       <option value="draft">Draft</option>
                       <option value="published">Published</option>
                     </select>
-                    {updatingCourseId === course._id && (
-                      <span className="ml-2 text-xs text-gray-500">Updating...</span>
-                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <a
-                        href={`/admin/courses/${course._id}/edit`}
+                      <button
+                        onClick={() => handleEditCourse(course)}
                         className="text-blue-600 hover:text-blue-900"
+                        disabled={updatingCourseId === course._id || loadingCourseDetails}
                       >
-                        Edit
-                      </a>
+                        {loadingCourseDetails ? "Loading..." : "Edit"}
+                      </button>
                       <a
                         href={`/courses/${course._id}`}
                         className="text-green-600 hover:text-green-900"

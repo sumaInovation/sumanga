@@ -1,0 +1,10 @@
+// Create this file in your public folder
+// public/default-course-thumbnail.jpg
+
+// Or use a placeholder service in your CourseManagementTab:
+const getThumbnailUrl = (course) => {
+  if (course.thumbnail) return course.thumbnail;
+  
+  // Use a placeholder service
+  return `https://via.placeholder.com/150/3B82F6/FFFFFF?text=${encodeURIComponent(course.title.substring(0, 2).toUpperCase())}`;
+};
