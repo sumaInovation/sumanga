@@ -58,92 +58,61 @@ export async function GET(request, { params }) {
     }
 
     console.log('✅ Course found:', course.title);
-    console.log('🎁 Raw specialOffers from DB:', course.specialOffers);
-    console.log('🎁 Raw specialOffer from DB:', course.specialOffer);
+    console.log('💰 Base Price:', course.basePrice);
+    console.log('⏰ Duration (weeks):', course.duration);
+    console.log('👥 Batches data:', course.batches?.length);
 
-    // ✅ FIXED: Handle specialOffers array from MongoDB
-    let specialOfferData;
-    
-    if (course.specialOffers && course.specialOffers.length > 0) {
-      // Find the first active offer
-      const activeOffer = course.specialOffers.find(offer => offer.isActive === true);
-      if (activeOffer) {
-        // Calculate discount percentage based on discountType
-        let discountPercentage = 0;
-        if (activeOffer.discountType === 'percentage') {
-          discountPercentage = activeOffer.discountValue || 0;
-        } else if (activeOffer.discountType === 'fixed' && course.baseFees > 0) {
-          // Convert fixed amount to percentage
-          discountPercentage = Math.round((activeOffer.discountValue / course.baseFees) * 100);
-        }
-        
-        specialOfferData = {
-          isActive: true,
-          discountPercentage: discountPercentage,
-          offerPrice: activeOffer.discountType === 'fixed' 
-            ? (course.baseFees - activeOffer.discountValue)
-            : (course.baseFees - (course.baseFees * discountPercentage / 100)),
-          validUntil: activeOffer.validUntil || null,
-          title: activeOffer.title,
-          description: activeOffer.description,
-          discountType: activeOffer.discountType,
-          discountValue: activeOffer.discountValue,
-          validFrom: activeOffer.validFrom
-        };
-        console.log('✅ Using active offer from specialOffers array:', activeOffer);
-        console.log('💰 Calculated discount:', discountPercentage + '%');
-      } else {
-        specialOfferData = {
-          isActive: false,
-          discountPercentage: 0,
-          offerPrice: 0,
-          validUntil: null
-        };
-        console.log('❌ No active offers found in specialOffers array');
-      }
-    } else {
-      specialOfferData = {
-        isActive: false,
-        discountPercentage: 0,
-        offerPrice: 0,
-        validUntil: null
-      };
-      console.log('❌ No specialOffers array found');
-    }
+    // ✅ UPDATED: Process batches with new structure including startDate and endDate
+    const processedBatches = (course.batches || []).map(batch => ({
+      ...batch,
+      _id: batch._id?.toString(),
+      // Simple location string (no complex object)
+      location: batch.location || '',
+      // Simple arrays and strings
+      conductDays: batch.conductDays || [],
+      conductTime: batch.conductTime || '',
+      offer: parseInt(batch.offer) || 0,
+      status: batch.status || 'upcoming',
+      // ✅ ADDED: Include startDate and endDate
+      startDate: batch.startDate || null,
+      endDate: batch.endDate || null
+    }));
+
+    // ✅ UPDATED: Get next batch info with date sorting
+    const nextBatch = processedBatches
+      .filter(batch => batch.status === 'upcoming')
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))[0] || null;
 
     const courseData = {
       ...course,
       _id: course._id.toString(),
+      
+      basePrice: course.basePrice || 0,
+      duration: course.duration || 0,
+     
+      batches: processedBatches,
+     
       videoCollections: course.videoCollections || [],
       syllabus: course.syllabus || [],
-      equipmentUsed: course.equipmentUsed || [],
-      softwareUsed: course.softwareUsed || [],
-      prerequisites: course.prerequisites || [],
-      tags: course.tags || [],
       gallery: course.gallery || [],
-      batches: course.batches || [],
-      enrolledStudents: course.enrolledStudents || [],
-      duration: course.duration || {
-        totalDays: 0,
-        totalHours: 0,
-        theoryHours: 0,
-        practicalHours: 0,
-        perDayHours: 3
-      },
-      // ✅ Use the processed special offer data
-      specialOffer: specialOfferData,
-      nextBatchStartDate: course.nextBatchStartDate || null
+      // ✅ UPDATED: Next batch info with dates
+      nextBatch: nextBatch ? {
+        batchName: nextBatch.batchName,
+        startDate: nextBatch.startDate,
+        endDate: nextBatch.endDate,
+        conductDays: nextBatch.conductDays,
+        conductTime: nextBatch.conductTime,
+        location: nextBatch.location,
+        offer: nextBatch.offer
+      } : null
     };
 
     console.log('📹 Video collections count:', courseData.videoCollections.length);
     console.log('📚 Syllabus days:', courseData.syllabus.length);
-    console.log('🎁 Final Special Offer Data:', {
-      isActive: courseData.specialOffer.isActive,
-      discountPercentage: courseData.specialOffer.discountPercentage + '%',
-      offerPrice: courseData.specialOffer.offerPrice,
-      validUntil: courseData.specialOffer.validUntil
-    });
-    console.log('📅 Next Batch Date:', courseData.nextBatchStartDate);
+    console.log('👥 Batches count:', courseData.batches.length);
+    console.log('💰 Base Price:', courseData.basePrice);
+    console.log('⏰ Duration (weeks):', courseData.duration);
+    console.log('📅 Next Batch:', courseData.nextBatch);
 
     return NextResponse.json({ 
       success: true, 
@@ -172,83 +141,58 @@ export async function PUT(request, { params }) {
     const updates = await request.json();
 
     console.log('🔄 Updating course with ID:', id);
-    console.log('🎁 Special Offer Data from request:', updates.specialOffer);
-    console.log('🎁 Special Offers Data from request:', updates.specialOffers);
-    console.log('📅 Next Batch Date:', updates.nextBatchStartDate);
+    console.log('📝 Full updates received:', updates);
+    console.log('💰 Base Price from request:', updates.basePrice);
+    console.log('⏰ Duration from request:', updates.duration);
+    console.log('📅 Batches data:', updates.batches?.length, 'batches');
     console.log('📚 Syllabus data:', updates.syllabus?.length, 'days');
 
-    // ✅ FIXED: Handle both specialOffer (object) and specialOffers (array) from frontend
-    let processedSpecialOffers = [];
-    
-    if (updates.specialOffer && updates.specialOffer.isActive) {
-      // Convert single specialOffer to specialOffers array format
-      processedSpecialOffers = [{
-        title: updates.specialOffer.title || 'Special Offer',
-        description: updates.specialOffer.description || '',
-        discountType: updates.specialOffer.discountType || 'percentage',
-        discountValue: Number(updates.specialOffer.discountValue) || 0,
-        validFrom: updates.specialOffer.validFrom || new Date(),
-        validUntil: updates.specialOffer.validUntil || null,
-        isActive: Boolean(updates.specialOffer.isActive)
-      }];
-    } else if (updates.specialOffers && Array.isArray(updates.specialOffers)) {
-      // Use the specialOffers array directly
-      processedSpecialOffers = updates.specialOffers.map(offer => ({
-        title: offer.title || 'Special Offer',
-        description: offer.description || '',
-        discountType: offer.discountType || 'percentage',
-        discountValue: Number(offer.discountValue) || 0,
-        validFrom: offer.validFrom || new Date(),
-        validUntil: offer.validUntil || null,
-        isActive: Boolean(offer.isActive)
-      }));
-    }
+    // ✅ UPDATED: Process batches with new structure including startDate and endDate
+    const processedBatches = Array.isArray(updates.batches) ? updates.batches.map(batch => ({
+      batchName: batch.batchName || '',
+      // ✅ ADDED: Handle startDate and endDate
+      startDate: batch.startDate ? new Date(batch.startDate) : null,
+      endDate: batch.endDate ? new Date(batch.endDate) : null,
+      offer: parseInt(batch.offer) || 0,
+      location: batch.location || '',
+      conductTime: batch.conductTime || '',
+      status: batch.status || 'upcoming',
+      conductDays: Array.isArray(batch.conductDays) ? batch.conductDays : [],
+      description: batch.description || '',
+      features: Array.isArray(batch.features) ? batch.features : []
+    })) : [];
 
     const processedUpdates = {
-      ...updates,
-      // ✅ Store as specialOffers array in MongoDB
-      specialOffers: processedSpecialOffers,
-      // ✅ FIXED: Process next batch date - convert empty string to null
-      nextBatchStartDate: updates.nextBatchStartDate || null,
-      // ✅ FIXED: Process other numeric fields
-      baseFees: parseInt(updates.baseFees) || 0,
-      // ✅ FIXED: Process duration fields
-      duration: updates.duration ? {
-        totalDays: parseInt(updates.duration.totalDays) || 0,
-        totalHours: parseInt(updates.duration.totalHours) || 0,
-        theoryHours: parseInt(updates.duration.theoryHours) || 0,
-        practicalHours: parseInt(updates.duration.practicalHours) || 0,
-        perDayHours: parseInt(updates.duration.perDayHours) || 3
-      } : {
-        totalDays: 0,
-        totalHours: 0,
-        theoryHours: 0,
-        practicalHours: 0,
-        perDayHours: 3
-      },
-      // ✅ FIXED: Process arrays to ensure they exist
-      equipmentUsed: Array.isArray(updates.equipmentUsed) ? updates.equipmentUsed : [],
-      softwareUsed: Array.isArray(updates.softwareUsed) ? updates.softwareUsed : [],
-      prerequisites: Array.isArray(updates.prerequisites) ? updates.prerequisites : [],
-      tags: Array.isArray(updates.tags) ? updates.tags : [],
-      gallery: Array.isArray(updates.gallery) ? updates.gallery : [],
-      videoCollections: Array.isArray(updates.videoCollections) ? updates.videoCollections : [],
-      syllabus: Array.isArray(updates.syllabus) ? updates.syllabus : []
+      // ✅ Only update provided fields, don't overwrite with undefined
+      ...(updates.title !== undefined && { title: updates.title }),
+      ...(updates.code !== undefined && { code: updates.code }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.shortDescription !== undefined && { shortDescription: updates.shortDescription }),
+      ...(updates.category !== undefined && { category: updates.category }),
+      ...(updates.level !== undefined && { level: updates.level }),
+      
+      // ✅ Only update if provided
+      ...(updates.basePrice !== undefined && { basePrice: parseInt(updates.basePrice) || 0 }),
+      ...(updates.duration !== undefined && { duration: parseInt(updates.duration) || 0 }),
+      
+      // ✅ Only update if provided
+      ...(updates.batches !== undefined && { batches: processedBatches }),
+      ...(updates.videoCollections !== undefined && { videoCollections: Array.isArray(updates.videoCollections) ? updates.videoCollections : [] }),
+      ...(updates.syllabus !== undefined && { syllabus: Array.isArray(updates.syllabus) ? updates.syllabus : [] }),
+      ...(updates.gallery !== undefined && { gallery: Array.isArray(updates.gallery) ? updates.gallery : [] }),
+      
+      ...(updates.thumbnail !== undefined && { thumbnail: updates.thumbnail }),
+      ...(updates.isPublished !== undefined && { isPublished: Boolean(updates.isPublished) }),
     };
 
-    // Remove the single specialOffer object since we're storing as array
-    delete processedUpdates.specialOffer;
+    console.log('🔄 Processed updates for saving:', processedUpdates);
+    console.log('📅 Batches with dates:', processedBatches.map(b => ({
+      batchName: b.batchName,
+      startDate: b.startDate,
+      endDate: b.endDate
+    })));
 
-    console.log('🔄 Processed updates for saving:', {
-      specialOffers: processedUpdates.specialOffers,
-      nextBatchStartDate: processedUpdates.nextBatchStartDate,
-      baseFees: processedUpdates.baseFees,
-      equipmentCount: processedUpdates.equipmentUsed?.length,
-      softwareCount: processedUpdates.softwareUsed?.length,
-      syllabusDays: processedUpdates.syllabus?.length
-    });
-
-    // ✅ FIXED: Use findByIdAndUpdate with proper options
+    // ✅ Use findByIdAndUpdate with proper options
     const course = await Course.findByIdAndUpdate(
       id,
       { 
@@ -273,9 +217,14 @@ export async function PUT(request, { params }) {
     }
 
     console.log('✅ Course updated successfully');
-    console.log('✅ Saved Special Offers:', course.specialOffers);
-    console.log('✅ Saved Next Batch Date:', course.nextBatchStartDate);
-    console.log('✅ Saved Base Fees:', course.baseFees);
+    console.log('💰 Saved Base Price:', course.basePrice);
+    console.log('⏰ Saved Duration:', course.duration);
+    console.log('✅ Saved Batches:', course.batches?.length);
+    console.log('📅 Batch dates:', course.batches?.map(b => ({
+      batchName: b.batchName,
+      startDate: b.startDate,
+      endDate: b.endDate
+    })));
 
     return NextResponse.json({ 
       success: true, 
@@ -286,7 +235,6 @@ export async function PUT(request, { params }) {
   } catch (error) {
     console.error('❌ Error updating course:', error);
     
-    // ✅ IMPROVED: Better error handling with more details
     let errorMessage = 'Failed to update course';
     let statusCode = 500;
     

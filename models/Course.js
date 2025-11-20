@@ -1,3 +1,4 @@
+
 // models/Course.js
 import mongoose from 'mongoose';
 
@@ -7,7 +8,7 @@ const syllabusItemSchema = new mongoose.Schema({
     required: true
   },
   duration: {
-    type: Number, // in minutes
+    type: Number,
     required: true
   },
   type: {
@@ -52,7 +53,7 @@ const daySchema = new mongoose.Schema({
     required: true
   },
   items: [syllabusItemSchema],
-  totalDuration: Number // Auto-calculated
+  totalDuration: Number
 });
 
 // Calculate total duration before saving
@@ -61,67 +62,61 @@ daySchema.pre('save', function(next) {
   next();
 });
 
+// ✅ UPDATED: Batch Schema with startDate and endDate
 const batchSchema = new mongoose.Schema({
-  batchNumber: {
-    type: String,
+  batchName: {
+    type: String, 
     required: true
   },
   startDate: {
     type: Date,
     required: true
   },
-  endDate: Date,
-  schedule: {
-    days: [String], // ['Monday', 'Wednesday', 'Friday']
-    time: String, // '10:00 AM - 1:00 PM'
-    duration: String // '3 hours'
+  endDate: {
+    type: Date
   },
-  maxStudents: {
-    type: Number,
-    default: 20
+  offer: {
+    type: Number, 
+    default: 0
   },
-  enrolledStudents: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+  conductDays: [{
+    type: String,
+    enum: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    required: true
   }],
+  conductTime: {
+    type: String,
+    required: true
+  },
+  location: {
+    type: String,
+    required: true
+  },
   status: {
     type: String,
-    enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
+    enum: ['completed', 'ongoing', 'upcoming'],
     default: 'upcoming'
   },
-  fees: {
-    originalPrice: Number,
-    discountedPrice: Number,
-    currency: {
-      type: String,
-      default: 'INR'
-    },
-    offerValidUntil: Date,
-    offerDescription: String
-  }
+  description: {
+    type: String,
+    default: ''
+  },
+  features: [{
+    type: String
+  }]
 });
 
-// Special Offer Schema (singular - matching your form)
-const specialOfferSchema = new mongoose.Schema({
-  isActive: {
-    type: Boolean,
-    default: false
-  },
-  discountPercentage: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 100
-  },
-  offerPrice: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
-  validUntil: {
-    type: Date,
-    default: null
+// Calculate endDate based on course duration and startDate
+batchSchema.pre('save', function(next) {
+  if (this.startDate && this.parent().duration) {
+    const startDate = new Date(this.startDate);
+    const durationInWeeks = this.parent().duration;
+    // Calculate end date by adding weeks to start date
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + (durationInWeeks * 7));
+    this.endDate = endDate;
   }
+  next();
 });
 
 const courseSchema = new mongoose.Schema({
@@ -159,68 +154,22 @@ const courseSchema = new mongoose.Schema({
     default: 'beginner'
   },
 
-  // Syllabus Structure (Following your exact format)
-  syllabus: [daySchema],
+  // ✅ SIMPLIFIED: Direct basePrice and duration
+  basePrice: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  duration: {
+    type: Number, // in weeks
+    required: true
+  },
 
   // Batches Management
   batches: [batchSchema],
-  
-  // Pricing & Offers
-  baseFees: {
-    type: Number,
-    required: true
-  },
-  currency: {
-    type: String,
-    default: 'INR'
-  },
-  
-  // ✅ FIXED: Changed from specialOffers (array) to specialOffer (object)
-  specialOffer: specialOfferSchema,
 
-  // ✅ ADDED: Next batch start date
-  nextBatchStartDate: {
-    type: Date,
-    default: null
-  },
-
-  // Duration Information
-  duration: {
-    totalDays: Number,
-    totalHours: Number,
-    theoryHours: Number,
-    practicalHours: Number,
-    perDayHours: Number
-  },
-
-  // Instructor
-  instructor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  instructorName: {
-    type: String,
-    required: true
-  },
-
-  // Equipment & Requirements
-  equipmentUsed: [{
-    name: String,
-    description: String,
-    quantity: Number
-  }],
-  softwareUsed: [{
-    name: String,
-    version: String,
-    description: String
-  }],
-  prerequisites: [String],
-
-  // Media
-  thumbnail: String,
-  promoVideo: String,
-  gallery: [String],
+  // Syllabus Structure
+  syllabus: [daySchema],
 
   // Video Collections
   videoCollections: [{
@@ -244,23 +193,16 @@ const courseSchema = new mongoose.Schema({
     }]
   }],
 
+  // Image Gallery
+  gallery: [String],
+
+  // Media
+  thumbnail: String,
+
   // Status & Settings
   isPublished: {
     type: Boolean,
     default: false
-  },
-  isFeatured: {
-    type: Boolean,
-    default: false
-  },
-  certificateIncluded: {
-    type: Boolean,
-    default: true
-  },
-  tags: [String],
-  language: {
-    type: String,
-    default: 'English'
   }
 }, {
   timestamps: true
