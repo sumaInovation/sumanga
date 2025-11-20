@@ -345,7 +345,7 @@ export default function CourseDetailPage() {
         const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
         
         // Fetch course data
-        const courseRes = await fetch(`${baseUrl}/api/courses/${id}`, {
+        const courseRes = await fetch(`/api/courses/${id}`, {
           cache: 'no-store',
         });
 
