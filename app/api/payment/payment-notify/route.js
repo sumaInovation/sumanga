@@ -1,84 +1,66 @@
 
 import { NextResponse } from 'next/server';
 
-// Store active connections
-const clients = new Set();
-
 export async function POST(request) {
+  // Log START - this should appear in Render logs
+  console.log('🚨 ===== PAYHERE NOTIFICATION START =====');
+  console.log('🕒 Timestamp:', new Date().toISOString());
+  
   try {
-    const formData = await request.formData();
-    const orderId = formData.get('order_id');
-    const statusCode = formData.get('status_code');
-    const paymentId = formData.get('payment_id');
+    // Get the raw body first to see what's coming in
+    const contentType = request.headers.get('content-type');
+    console.log('📋 Content-Type:', contentType);
     
-    console.log('🔔 Notification received for order:', orderId);
-
-    // Convert to simple object for broadcasting
-    const notificationData = {};
-    for (const [key, value] of formData.entries()) {
-      notificationData[key] = value;
+    // Check if it's form data
+    if (contentType && contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.formData();
+      
+      // Convert to object for logging
+      const notificationData = {};
+      for (const [key, value] of formData.entries()) {
+        notificationData[key] = value;
+      }
+      
+      console.log('✅ SUCCESS: Received form data from PayHere');
+      console.log('📦 FULL NOTIFICATION DATA:', JSON.stringify(notificationData, null, 2));
+      
+      // Log important fields
+      console.log('🔑 ORDER ID:', notificationData.order_id);
+      console.log('💰 AMOUNT:', notificationData.payhere_amount);
+      console.log('📊 STATUS CODE:', notificationData.status_code);
+      console.log('📝 STATUS MESSAGE:', notificationData.status_message);
+      console.log('🆔 PAYMENT ID:', notificationData.payment_id);
+      console.log('🔐 MD5 SIG:', notificationData.md5sig ? 'PRESENT' : 'MISSING');
+      
+    } else {
+      // Log raw body for debugging
+      const rawBody = await request.text();
+      console.log('❌ UNEXPECTED CONTENT TYPE');
+      console.log('📦 RAW BODY:', rawBody);
     }
-
-    // Broadcast to all clients (in real app, use Redis Pub/Sub)
-    clients.forEach(client => {
-      if (client.orderId === orderId) {
-        try {
-          client.controller.enqueue(
-            `data: ${JSON.stringify({
-              type: 'payment_notification',
-              orderId,
-              statusCode,
-              paymentId,
-              data: notificationData,
-              timestamp: new Date().toISOString()
-            })}\n\n`
-          );
-        } catch (error) {
-          console.error('Error sending to client:', error);
-          clients.delete(client);
-        }
+    
+    console.log('✅ ===== PAYHERE NOTIFICATION PROCESSED SUCCESSFULLY =====');
+    
+    // Always return 200 OK
+    return new Response('OK', { 
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain',
       }
     });
-
-    // Log for debugging
-    console.log('📢 Broadcasted notification to clients:', clients.size);
-
-    return new Response('OK', { status: 200 });
+    
   } catch (error) {
-    console.error('Notification error:', error);
-    return new Response('OK', { status: 200 });
+    console.log('❌ ===== PAYHERE NOTIFICATION ERROR =====');
+    console.log('💥 ERROR DETAILS:', error.message);
+    console.log('📋 ERROR STACK:', error.stack);
+    console.log('❌ ===== END ERROR =====');
+    
+    // Still return 200 to PayHere even on error
+    return new Response('OK', { 
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain',
+      }
+    });
   }
-}
-
-// SSE connection handler
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const orderId = searchParams.get('order_id');
-
-  const stream = new ReadableStream({
-    start(controller) {
-      const client = { controller, orderId };
-      clients.add(client);
-
-      // Send connection confirmation
-      controller.enqueue(`data: ${JSON.stringify({ 
-        type: 'connected', 
-        orderId,
-        message: 'Listening for payment notifications...'
-      })}\n\n`);
-
-      // Cleanup on close
-      request.signal.addEventListener('abort', () => {
-        clients.delete(client);
-      });
-    }
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
 }

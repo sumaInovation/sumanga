@@ -1,29 +1,27 @@
-'use client';
-import PayHerePayment from '@/components/PayHerePayment';
 
-export default function PaymentPage() {
-  // Sample order details
-  const orderDetails = {
-    order_id: `order_${Date.now()}`, // Unique order ID
-    amount: "1000.00",
-    currency: "LKR",
-    items: "Web Development Course",
-    first_name: "Saman",
-    last_name: "Perera",
-    email: "samanp@gmail.com",
-    phone: "0771234567",
-    address: "No.1, Galle Road",
-    city: "Colombo",
-    country: "Sri Lanka"
-  };
+import { NextResponse } from 'next/server';
 
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Complete Your Payment</h1>
-      
-      <div className="max-w-md mx-auto">
-        <PayHerePayment orderDetails={orderDetails} />
-      </div>
-    </div>
-  );
+export async function GET(request) {
+  console.log('✅ TEST ENDPOINT HIT - API is working on Render.com');
+  
+  return NextResponse.json({
+    success: true,
+    message: 'Payment API is working on Render.com',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+}
+
+export async function POST(request) {
+  console.log('✅ TEST POST ENDPOINT HIT');
+  
+  const body = await request.json();
+  console.log('📦 TEST POST DATA:', body);
+  
+  return NextResponse.json({
+    success: true,
+    message: 'POST request received',
+    received: body,
+    timestamp: new Date().toISOString()
+  });
 }

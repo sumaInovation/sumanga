@@ -38,7 +38,7 @@ export default function PayHerePayment({ orderDetails }) {
         merchant_id: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID,
         return_url: undefined,
         cancel_url: undefined,
-        notify_url: `${window.location.origin}/api/payment/payment-notify`, // Debug URL
+        notify_url: `/api/payment/payment-notify`, // Debug URL
         order_id: orderDetails.order_id,
         items: orderDetails.items || 'Test Payment',
         amount: orderDetails.amount.toString(),
