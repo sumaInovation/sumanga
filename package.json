@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "import:syllabus": "node import-plc-syllabus.js"
   },
   "dependencies": {
     "@vercel/og": "^0.8.5",

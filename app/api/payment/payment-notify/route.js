@@ -1,66 +1,35 @@
 
-import { NextResponse } from 'next/server';
 
-export async function POST(request) {
-  // Log START - this should appear in Render logs
-  console.log('🚨 ===== PAYHERE NOTIFICATION START =====');
-  console.log('🕒 Timestamp:', new Date().toISOString());
-  
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/mongodb';
+import Registration from '@/models/Registration';
+
+export async function GET(request, { params }) {
   try {
-    // Get the raw body first to see what's coming in
-    const contentType = request.headers.get('content-type');
-    console.log('📋 Content-Type:', contentType);
+    await connectDB();
     
-    // Check if it's form data
-    if (contentType && contentType.includes('application/x-www-form-urlencoded')) {
-      const formData = await request.formData();
-      
-      // Convert to object for logging
-      const notificationData = {};
-      for (const [key, value] of formData.entries()) {
-        notificationData[key] = value;
-      }
-      
-      console.log('✅ SUCCESS: Received form data from PayHere');
-      console.log('📦 FULL NOTIFICATION DATA:', JSON.stringify(notificationData, null, 2));
-      
-      // Log important fields
-      console.log('🔑 ORDER ID:', notificationData.order_id);
-      console.log('💰 AMOUNT:', notificationData.payhere_amount);
-      console.log('📊 STATUS CODE:', notificationData.status_code);
-      console.log('📝 STATUS MESSAGE:', notificationData.status_message);
-      console.log('🆔 PAYMENT ID:', notificationData.payment_id);
-      console.log('🔐 MD5 SIG:', notificationData.md5sig ? 'PRESENT' : 'MISSING');
-      
-    } else {
-      // Log raw body for debugging
-      const rawBody = await request.text();
-      console.log('❌ UNEXPECTED CONTENT TYPE');
-      console.log('📦 RAW BODY:', rawBody);
+    const registration = await Registration.findById(params.id)
+      .populate('course', 'title code duration')
+      .populate('student', 'name email');
+
+    if (!registration) {
+      return NextResponse.json({ error: 'Registration not found' }, { status: 404 });
     }
-    
-    console.log('✅ ===== PAYHERE NOTIFICATION PROCESSED SUCCESSFULLY =====');
-    
-    // Always return 200 OK
-    return new Response('OK', { 
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
+
+    return NextResponse.json({
+      registration: {
+        _id: registration._id,
+        course: registration.course?.title,
+        student: registration.student?.name,
+        totalAmount: registration.totalAmount,
+        amountPaid: registration.amountPaid,
+        dueAmount: registration.dueAmount,
+        paymentStatus: registration.paymentStatus,
+        paymentHistory: registration.paymentHistory,
+        accessGranted: registration.accessGranted
       }
     });
-    
   } catch (error) {
-    console.log('❌ ===== PAYHERE NOTIFICATION ERROR =====');
-    console.log('💥 ERROR DETAILS:', error.message);
-    console.log('📋 ERROR STACK:', error.stack);
-    console.log('❌ ===== END ERROR =====');
-    
-    // Still return 200 to PayHere even on error
-    return new Response('OK', { 
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
-      }
-    });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
