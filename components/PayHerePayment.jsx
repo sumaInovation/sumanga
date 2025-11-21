@@ -6,80 +6,67 @@ import { useRouter } from 'next/navigation';
 
 export default function PayHerePayment({ orderDetails }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState(null);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isClient, setIsClient] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
   const router = useRouter();
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const initializePayment = useCallback(async () => {
     setIsLoading(true);
-    setErrorMessage('');
+    setDebugInfo('Starting payment process...');
     
     try {
-      console.log('Starting payment for order:', orderDetails.order_id);
-      
+      // Generate hash (keep your existing hash generation code)
       const hashResponse = await fetch('/api/payment/generate-payment-hash', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          merchant_id: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID || '121XXXX',
+          merchant_id: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID,
           order_id: orderDetails.order_id,
           amount: orderDetails.amount,
           currency: orderDetails.currency || 'LKR',
         }),
       });
 
-      console.log('Hash API response status:', hashResponse.status);
-
-      let hashData;
-      try {
-        hashData = await hashResponse.json();
-      } catch (parseError) {
-        console.error('Failed to parse JSON response:', parseError);
-        throw new Error('Invalid response from server');
+      const hashData = await hashResponse.json();
+      
+      if (!hashResponse.ok || !hashData.hash) {
+        throw new Error('Failed to generate payment hash');
       }
 
-      if (!hashResponse.ok) {
-        throw new Error(hashData.error || `Server error: ${hashResponse.status}`);
-      }
-
-      if (!hashData.success) {
-        throw new Error(hashData.error || 'Failed to generate payment hash');
-      }
-
-      if (!hashData.hash) {
-        throw new Error('No hash returned from server');
-      }
-
-      console.log('Payment hash generated successfully:', hashData.hash);
-
+      // IMPORTANT: Use the debug notify_url
       const payment = {
-        sandbox: process.env.NEXT_PUBLIC_PAYHERE_SANDBOX === 'true',
-        merchant_id: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID || '121XXXX',
+        sandbox: true, // Use sandbox for testing
+        merchant_id: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID,
         return_url: undefined,
         cancel_url: undefined,
-        notify_url: `${window.location.origin}/api/payment/payment-notify`,
-        ...orderDetails,
+        notify_url: `${window.location.origin}/api/payment/payment-notify`, // Debug URL
+        order_id: orderDetails.order_id,
+        items: orderDetails.items || 'Test Payment',
+        amount: orderDetails.amount.toString(),
+        currency: orderDetails.currency || 'LKR',
         hash: hashData.hash,
+        first_name: orderDetails.first_name || 'Test',
+        last_name: orderDetails.last_name || 'User',
+        email: orderDetails.email || 'test@example.com',
+        phone: orderDetails.phone || '0770000000',
+        address: orderDetails.address || 'Test Address',
+        city: orderDetails.city || 'Colombo',
+        country: orderDetails.country || 'Sri Lanka',
+        custom_1: `debug_${Date.now()}`, // Add timestamp for tracking
+        custom_2: 'debug_payment'
       };
 
-      console.log('Payment object created, starting PayHere...');
+      setDebugInfo('Payment object created. Starting PayHere popup...');
 
+      // Start payment
       if (window.payhere && window.payhere.startPayment) {
         window.payhere.startPayment(payment);
       } else {
         throw new Error('PayHere SDK not loaded');
       }
+
     } catch (error) {
-      console.error('Payment initialization error:', error);
-      setPaymentStatus('error');
-      setErrorMessage(error.message || 'Failed to initialize payment');
+      console.error('Payment error:', error);
+      setDebugInfo(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -97,82 +84,79 @@ export default function PayHerePayment({ orderDetails }) {
       script.async = true;
       
       script.onload = () => {
-        console.log('PayHere SDK loaded successfully');
+        console.log('PayHere SDK loaded');
         
-        // FIX: Pass the order_id when payment is completed
+        // Simple event handlers for debug
         window.payhere.onCompleted = function onCompleted(orderId) {
-          console.log('Payment completed for order:', orderId);
-          setPaymentStatus('completed');
-          setErrorMessage('');
+          console.log('Payment completed:', orderId);
+          setDebugInfo(`Payment completed! Order: ${orderId}. Check server logs for notification.`);
           
-          // FIX: Redirect to success page WITH order_id
+          // You can check the notification in your server logs
           setTimeout(() => {
-            router.push(`/payment/success?order_id=${orderId}`);
-          }, 1500);
+            alert('Payment completed! Check your server console for the notification data.');
+          }, 1000);
         };
 
         window.payhere.onDismissed = function onDismissed() {
-          console.log('Payment dismissed by user');
-          setPaymentStatus('dismissed');
-          setErrorMessage('');
+          console.log('Payment dismissed');
+          setDebugInfo('Payment was cancelled by user.');
         };
 
         window.payhere.onError = function onError(error) {
-          console.error('PayHere SDK error:', error);
-          setPaymentStatus('error');
-          setErrorMessage('Payment processing error. Please try again.');
+          console.log('Payment error:', error);
+          setDebugInfo(`Payment error: ${error}`);
         };
 
         resolve();
       };
 
       script.onerror = () => {
-        console.error('Failed to load PayHere SDK');
-        reject(new Error('Failed to load payment system'));
+        reject(new Error('Failed to load PayHere SDK'));
       };
 
       document.head.appendChild(script);
     });
-  }, [router]);
+  }, []);
 
   const handlePayment = async () => {
+    setDebugInfo('Loading PayHere SDK...');
     try {
-      setIsLoading(true);
-      setPaymentStatus(null);
-      setErrorMessage('');
       await loadPayHereSDK();
       await initializePayment();
     } catch (error) {
-      console.error('Payment error:', error);
-      setPaymentStatus('error');
-      setErrorMessage(error.message || 'Failed to process payment');
-    } finally {
-      setIsLoading(false);
+      setDebugInfo(`Error: ${error.message}`);
     }
   };
 
   return (
-    <div className="w-full">
-      {/* ... (keep your existing UI) ... */}
+    <div className="w-full p-4 border rounded-lg">
+      <h3 className="text-lg font-bold mb-4">Test Payment (Debug Mode)</h3>
       
-      {/* Payment Button */}
       <button
         onClick={handlePayment}
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-lg"
+        className="w-full bg-green-600 text-white py-3 px-6 rounded disabled:bg-gray-400"
       >
-        {isLoading ? (
-          <div className="flex items-center justify-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Processing...
-          </div>
-        ) : (
-          `Pay LKR ${orderDetails.amount}`
-        )}
+        {isLoading ? 'Processing...' : 'Test PayHere Payment'}
       </button>
+
+      {/* Debug Info Display */}
+      <div className="mt-4 p-3 bg-gray-100 rounded">
+        <h4 className="font-semibold mb-2">Debug Information:</h4>
+        <pre className="text-sm whitespace-pre-wrap">
+          {debugInfo || 'Click the button to start payment test...'}
+        </pre>
+      </div>
+
+      <div className="mt-4 text-sm text-gray-600">
+        <p>🔍 <strong>How to test:</strong></p>
+        <ol className="list-decimal list-inside mt-2 space-y-1">
+          <li>Click the payment button</li>
+          <li>Complete the payment in PayHere popup</li>
+          <li>Check your server console logs for notification data</li>
+          <li>You should see "PAYHERE NOTIFICATION RECEIVED!" in logs</li>
+        </ol>
+      </div>
     </div>
   );
 }

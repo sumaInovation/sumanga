@@ -1,34 +1,47 @@
-
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
-import Registration from '@/models/Registration';
 
-export async function GET(request, { params }) {
+export async function POST(request) {
   try {
-    await connectDB();
+    // Get the form data from PayHere
+    const formData = await request.formData();
     
-    const registration = await Registration.findById(params.id)
-      .populate('course', 'title code duration')
-      .populate('student', 'name email');
-
-    if (!registration) {
-      return NextResponse.json({ error: 'Registration not found' }, { status: 404 });
+    // Convert form data to simple object for logging
+    const notificationData = {};
+    for (const [key, value] of formData.entries()) {
+      notificationData[key] = value;
     }
 
-    return NextResponse.json({
-      registration: {
-        _id: registration._id,
-        course: registration.course?.title,
-        student: registration.student?.name,
-        totalAmount: registration.totalAmount,
-        amountPaid: registration.amountPaid,
-        dueAmount: registration.dueAmount,
-        paymentStatus: registration.paymentStatus,
-        paymentHistory: registration.paymentHistory,
-        accessGranted: registration.accessGranted
+    // Log everything to console (check your server logs)
+    console.log('🔔 PAYHERE NOTIFICATION RECEIVED!');
+    console.log('📦 Full notification data:', JSON.stringify(notificationData, null, 2));
+    console.log('📍 Order ID:', notificationData.order_id);
+    console.log('💰 Amount:', notificationData.payhere_amount);
+    console.log('📊 Status Code:', notificationData.status_code);
+    console.log('📝 Status Message:', notificationData.status_message);
+    console.log('🆔 Payment ID:', notificationData.payment_id);
+    console.log('💳 Method:', notificationData.method);
+    console.log('🔐 MD5 Signature:', notificationData.md5sig);
+
+    // Also log to a file or external service if needed
+    // You can check these logs in your server console or Vercel logs
+
+    // Always return 200 OK to PayHere
+    return new Response('OK', { 
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain',
       }
     });
+    
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('❌ ERROR in notification handler:', error);
+    
+    // Still return 200 to PayHere even if we have errors
+    return new Response('OK', { 
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain',
+      }
+    });
   }
 }
