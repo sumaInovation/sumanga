@@ -34,9 +34,7 @@ const userSchema = new mongoose.Schema({
   whatsappNumber: {
     type: String,
   },
-  course:{
-    type: String,
-  },
+  
   paidAmount: {
     type: Number,
     default: 0,

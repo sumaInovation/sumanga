@@ -488,14 +488,18 @@ function TabContent({ activeTab, course, session }) {
   }
 }
 
-// ✅ UPDATED: Batch Enrollment Component with dates
-function BatchEnrollment({ batch, course }) {
-  // Calculate batch price considering offer
+// ✅ UPDATED: Batch Enrollment Component with Registration
+// ✅ FIXED: Batch Enrollment Component 
+function BatchEnrollment({ batch, course, session, onRegistrationSuccess }) {
+  const [registering, setRegistering] = useState(false);
+
+  // Debug
+  console.log('BatchEnrollment - User logged in:', !!session);
+
   const batchPrice = batch.offer > 0 
     ? course.basePrice - (course.basePrice * batch.offer / 100)
     : course.basePrice;
 
-  // Format dates for display
   const formatDate = (dateString) => {
     if (!dateString) return 'TBA';
     const date = new Date(dateString);
@@ -506,31 +510,107 @@ function BatchEnrollment({ batch, course }) {
     });
   };
 
+  const handleRegister = async () => {
+    console.log('Register button clicked - User:', session?.user?.email);
+    
+    setRegistering(true);
+
+    try {
+      const response = await fetch('/api/registration/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseId: course._id,
+          batchId: batch._id
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`✅ Registration successful!\nCourse: ${course.title}\nBatch: ${batch.batchName}\nPrice: ₹${data.priceBreakdown.finalPrice}`);
+        window.location.href = `/payment/${data.registration._id}`;
+        
+        if (onRegistrationSuccess) {
+          onRegistrationSuccess(data.registration);
+        }
+      } else {
+        alert(`❌ ${data.error || 'Registration failed'}`);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('❌ Registration failed. Please try again.');
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   return (
     <div className="border border-gray-600 rounded-xl p-4 bg-gray-900">
-      <p className="font-medium text-white text-sm">
-        {batch.batchName}
-      </p>
+      <p className="font-medium text-white text-sm">{batch.batchName}</p>
       <p className="text-xs text-gray-400">
         📅 {formatDate(batch.startDate)} - {formatDate(batch.endDate)}
       </p>
       <p className="text-xs text-gray-400">
         🕐 {batch.conductDays?.join(', ')} at {batch.conductTime}
       </p>
-      <p className="text-xs text-gray-400">
-        📍 {batch.location}
-      </p>
-      {batch.offer > 0 && (
-        <p className="text-xs text-green-400 font-medium mt-1">
-          🎁 {batch.offer}% Discount Applied
-        </p>
-      )}
-      <button className="w-full mt-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg border border-blue-500">
-        Enroll Now - ₹ {batchPrice?.toLocaleString()}
+      <p className="text-xs text-gray-400">📍 {batch.location}</p>
+      
+      <div className="mt-2 mb-3">
+        {batch.offer > 0 ? (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">Original:</span>
+              <span className="text-gray-400 line-through">₹{course.basePrice?.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-green-400">Discount:</span>
+              <span className="text-green-400">{batch.offer}% OFF</span>
+            </div>
+            <div className="flex items-center justify-between font-semibold">
+              <span className="text-white">Final Price:</span>
+              <span className="text-green-400 text-lg">₹{batchPrice?.toLocaleString()}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between font-semibold">
+            <span className="text-white">Course Fee:</span>
+            <span className="text-white text-lg">₹{batchPrice?.toLocaleString()}</span>
+          </div>
+        )}
+      </div>
+
+      <button 
+        onClick={handleRegister}
+        disabled={registering}
+        className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-all border ${
+          registering 
+            ? 'bg-gray-600 text-gray-400 border-gray-500 cursor-not-allowed'
+            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 border-blue-500'
+        }`}
+      >
+        {registering ? (
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Registering...
+          </div>
+        ) : (
+          'Enroll Now' // ✅ This should ONLY show when user is logged in
+        )}
       </button>
+
+      {/* ✅ Add debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-2 text-xs text-gray-500">
+          Debug: Logged in: {session ? 'Yes' : 'No'} | User: {session?.user?.email}
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ✅ UPDATED: Batch Info Component with dates
 function BatchInfo({ batch, course }) {

@@ -13,7 +13,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [course, setCourse] = useState("");
   const [role, setRole] = useState("user");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,8 +24,8 @@ export default function RegisterPage() {
     setError("");
 
     // Validate student fields
-    if (role === "student" && (!phoneNumber || !whatsappNumber || !course)) {
-      setError("Phone number, WhatsApp number, and course are required for student registration");
+    if (role === "student" && (!phoneNumber || !whatsappNumber)) {
+      setError("Phone number and WhatsApp number are required for student registration");
       setLoading(false);
       return;
     }
@@ -41,7 +40,6 @@ export default function RegisterPage() {
           password, 
           phoneNumber, 
           whatsappNumber, 
-          course,
           role 
         }),
       });
@@ -207,17 +205,7 @@ export default function RegisterPage() {
                 disabled={loading || googleLoading}
               />
             </div>
-              <div>
-              <input
-                type="text"
-                placeholder="Course"
-                value={course}
-                onChange={(e) => setCourse(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                disabled={loading || googleLoading}
-              />
-            </div>
+              
           </>
         )}
         

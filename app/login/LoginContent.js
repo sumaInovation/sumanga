@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginContent() {
@@ -16,6 +16,7 @@ export default function LoginContent() {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const message = searchParams.get("message");
+  const callbackUrl = searchParams.get("callbackUrl") || "/profile/student"; // ✅ Get callbackUrl
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -35,8 +36,8 @@ export default function LoginContent() {
         return;
       }
 
-      // Redirect to dashboard on successful login
-      router.push("/dashboard");
+      // ✅ FIXED: Redirect to callbackUrl instead of /auth/redirect
+      router.push(callbackUrl);
     } catch (error) {
       setError("An error occurred during login");
       setLoading(false);
@@ -47,7 +48,12 @@ export default function LoginContent() {
     try {
       setGoogleLoading(true);
       setError("");
-      await signIn("google", { callbackUrl: "/dashboard" });
+      
+      // ✅ FIXED: Use the callbackUrl parameter
+      await signIn("google", {
+        callbackUrl: callbackUrl
+      });
+      
     } catch (error) {
       console.error("Google auth error:", error);
       setError("Failed to authenticate with Google");
@@ -68,6 +74,14 @@ export default function LoginContent() {
       {message === "already_registered" && (
         <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded mb-4">
           Account already exists. Please sign in.
+        </div>
+      )}
+
+      {/* ✅ ADDED: Show where user will be redirected after login */}
+      {callbackUrl && callbackUrl !== "/profile/student" && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded mb-4 text-sm">
+          <p className="font-medium">Returning to course registration</p>
+          <p className="text-blue-700 mt-1">After login, you'll be returned to complete your enrollment.</p>
         </div>
       )}
 
