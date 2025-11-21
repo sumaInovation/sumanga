@@ -1,4 +1,3 @@
-
 // components/Navbar.js
 "use client";
 
@@ -22,24 +21,34 @@ export default function Navbar() {
   const userRole = session?.user?.role || "user";
 
   // Default avatar as data URL
-  const defaultAvatar = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM2QjcyODAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iI0ZGRkZGRiIvPgo8cGF0aCBkPSJNMTYgMThDMTAgMTggNiAyMSA2IDI2SDI2QzI2IDIxIDIyIDE4IDE2IDE4WiIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4K";
+  const defaultAvatar =
+    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM2QjcyODAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iI0ZGRkZGRiIvPgo8cGF0aCBkPSJNMTYgMThDMTAgMTggNiAyMSA2IDI2SDI2QzI2IDIxIDIyIDE4IDE2IDE4WiIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4K";
 
   // Close dropdowns when clicking outside or pressing Escape
   useEffect(() => {
     function handleClickOutside(event) {
-      if (desktopDropdownRef.current && !desktopDropdownRef.current.contains(event.target)) {
+      if (
+        desktopDropdownRef.current &&
+        !desktopDropdownRef.current.contains(event.target)
+      ) {
         setIsDesktopDropdownOpen(false);
       }
-      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target)) {
+      if (
+        mobileDropdownRef.current &&
+        !mobileDropdownRef.current.contains(event.target)
+      ) {
         setIsMobileDropdownOpen(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
         setIsMobileMenuOpen(false);
       }
     }
 
     function handleEscapeKey(event) {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsDesktopDropdownOpen(false);
         setIsMobileDropdownOpen(false);
         setIsMobileMenuOpen(false);
@@ -48,7 +57,7 @@ export default function Navbar() {
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscapeKey);
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscapeKey);
@@ -56,9 +65,9 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = async () => {
-    await signOut({ 
+    await signOut({
       callbackUrl: "/",
-      redirect: true 
+      redirect: true,
     });
   };
 
@@ -81,10 +90,14 @@ export default function Navbar() {
   // Get role badge color based on role
   const getRoleBadgeColor = () => {
     switch (userRole) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'staff': return 'bg-green-100 text-green-800';
-      case 'instructor': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case "admin":
+        return "bg-red-100 text-red-800";
+      case "staff":
+        return "bg-green-100 text-green-800";
+      case "instructor":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-blue-100 text-blue-800";
     }
   };
 
@@ -114,8 +127,8 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors"
             >
               Suma Automation
@@ -124,46 +137,39 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
             >
               Home
             </Link>
-            
+
             {/* Courses Link - Visible to all */}
-            <Link 
-              href="/courses" 
+            <Link
+              href="/courses"
               className="text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
             >
               Courses
             </Link>
 
-            <Link 
-              href="/about" 
+            <Link
+              href="/about"
               className="text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
             >
               About
             </Link>
-            <Link 
-              href="/contact" 
+            <Link
+              href="/contact"
               className="text-gray-700 hover:text-gray-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-50"
             >
               Contact
             </Link>
-            
+
             {/* Staff/Admin Links */}
-            {isStaff && (
-              <Link 
-                href="/staff/dashboard" 
-                className="text-green-700 hover:text-green-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-green-50"
-              >
-                Staff
-              </Link>
-            )}
+           
             {isAdmin && (
-              <Link 
-                href="/admin" 
+              <Link
+                href="/admin"
                 className="text-red-700 hover:text-red-900 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-red-50"
               >
                 Admin
@@ -176,7 +182,9 @@ export default function Navbar() {
             {session ? (
               <div className="relative" ref={desktopDropdownRef}>
                 <button
-                  onClick={() => setIsDesktopDropdownOpen(!isDesktopDropdownOpen)}
+                  onClick={() =>
+                    setIsDesktopDropdownOpen(!isDesktopDropdownOpen)
+                  }
                   className="flex items-center space-x-3 bg-gray-50 hover:bg-gray-100 rounded-full pl-3 pr-2 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   aria-expanded={isDesktopDropdownOpen}
                   aria-haspopup="true"
@@ -192,16 +200,22 @@ export default function Navbar() {
                 </button>
 
                 {isDesktopDropdownOpen && (
-                  <div 
+                  <div
                     className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
                     role="menu"
                     aria-orientation="vertical"
                   >
                     <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900 truncate">{getUserName()}</p>
-                      <p className="text-xs text-gray-500 truncate mb-2">{session.user.email}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {getUserName()}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate mb-2">
+                        {session.user.email}
+                      </p>
                       <div className="flex items-center justify-between">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${getRoleBadgeColor()}`}>
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${getRoleBadgeColor()}`}
+                        >
                           {userRole}
                         </span>
                         <button
@@ -214,64 +228,27 @@ export default function Navbar() {
                         </button>
                       </div>
                     </div>
+
                     
-                    <Link 
-                      href="/dashboard" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      onClick={() => setIsDesktopDropdownOpen(false)}
-                      role="menuitem"
-                    >
-                      Dashboard
-                    </Link>
+
                     
-                    {/* Student Dashboard Link */}
-                    <Link 
-                      href="/student/dashboard" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors items-center gap-2"
-                      onClick={() => setIsDesktopDropdownOpen(false)}
-                      role="menuitem"
-                    >
-                      <span>🎓</span>
-                      My Learning
-                    </Link>
-                    
-                    <Link 
-                      href="/profile" 
+
+                    <Link
+                      href="/profile/student"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       onClick={() => setIsDesktopDropdownOpen(false)}
                       role="menuitem"
                     >
                       Profile
                     </Link>
+
+                  
+
                     
-                    {/* Instructor Links */}
-                    {isInstructor && (
-                      <Link 
-                        href="/instructor/dashboard" 
-                        className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 border-l-2 border-purple-500 ml-2 transition-colors items-center gap-2"
-                        onClick={() => setIsDesktopDropdownOpen(false)}
-                        role="menuitem"
-                      >
-                        <span>👨‍🏫</span>
-                        Instructor Dashboard
-                      </Link>
-                    )}
-                    
-                    {isStaff && (
-                      <Link 
-                        href="/staff/dashboard" 
-                        className="px-4 py-2 text-sm text-green-700 hover:bg-green-50 border-l-2 border-green-500 ml-2 transition-colors flex items-center gap-2"
-                        onClick={() => setIsDesktopDropdownOpen(false)}
-                        role="menuitem"
-                      >
-                        <span>🛠️</span>
-                        Staff Dashboard
-                      </Link>
-                    )}
-                    
+
                     {isAdmin && (
-                      <Link 
-                        href="/admin" 
+                      <Link
+                        href="/admin"
                         className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 border-l-2 border-red-500 ml-2 transition-colors items-center gap-2"
                         onClick={() => setIsDesktopDropdownOpen(false)}
                         role="menuitem"
@@ -280,12 +257,12 @@ export default function Navbar() {
                         Admin Dashboard
                       </Link>
                     )}
-                    
+
                     <div className="border-t border-gray-100 my-1"></div>
-                    <button 
-                      onClick={() => { 
-                        setIsDesktopDropdownOpen(false); 
-                        handleLogout(); 
+                    <button
+                      onClick={() => {
+                        setIsDesktopDropdownOpen(false);
+                        handleLogout();
                       }}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors items-center gap-2"
                       role="menuitem"
@@ -298,14 +275,14 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="text-gray-700 hover:text-gray-900 font-medium transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
                 >
                   Sign in
                 </Link>
-                <Link 
-                  href="/register" 
+                <Link
+                  href="/register"
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors text-sm font-medium"
                 >
                   Get Started
@@ -332,14 +309,18 @@ export default function Navbar() {
                 </button>
 
                 {isMobileDropdownOpen && (
-                  <div 
+                  <div
                     className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
                     role="menu"
                   >
                     <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900 truncate">{getUserName()}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {getUserName()}
+                      </p>
                       <div className="flex items-center justify-between mt-2">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${getRoleBadgeColor()}`}>
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${getRoleBadgeColor()}`}
+                        >
                           {userRole}
                         </span>
                         <button
@@ -351,28 +332,55 @@ export default function Navbar() {
                         </button>
                       </div>
                     </div>
-                    
-                    <Link href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🏠 Home</Link>
-                    <Link href="/courses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📚 Courses</Link>
-                    <Link href="/student/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>🎓 My Learning</Link>
-                    <Link href="/dashboard" className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>📊 Dashboard</Link>
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2" onClick={() => setIsMobileDropdownOpen(false)}>👤 Profile</Link>
-                    
-                    {/* Instructor, Staff, and Admin Links for Mobile */}
-                    {isInstructor && (
-                      <Link href="/instructor/dashboard" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 items-center gap-2 border-l-2 border-purple-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>👨‍🏫 Instructor</Link>
-                    )}
-                    
-                    {isStaff && (
-                      <Link href="/staff/dashboard" className="block px-4 py-2 text-sm text-green-700 hover:bg-green-50 items-center gap-2 border-l-2 border-green-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>🛠️ Staff</Link>
-                    )}
-                    
+
+                    <Link
+                      href="/"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2"
+                      onClick={() => setIsMobileDropdownOpen(false)}
+                    >
+                      🏠 Home
+                    </Link>
+                    <Link
+                      href="/courses"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2"
+                      onClick={() => setIsMobileDropdownOpen(false)}
+                    >
+                      📚 Courses
+                    </Link>
+                     <Link
+                      href="/products"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2"
+                      onClick={() => setIsMobileDropdownOpen(false)}
+                    >
+                      📚 Products
+                    </Link>
+
+                    <Link
+                      href="/profile/student"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 items-center gap-2"
+                      onClick={() => setIsMobileDropdownOpen(false)}
+                    >
+                      👤 Profile
+                    </Link>
+
                     {isAdmin && (
-                      <Link href="/admin" className="px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2" onClick={() => setIsMobileDropdownOpen(false)}>⚙️ Admin</Link>
+                      <Link
+                        href="/admin"
+                        className="px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2 border-l-2 border-red-500 ml-2"
+                        onClick={() => setIsMobileDropdownOpen(false)}
+                      >
+                        ⚙️ Admin
+                      </Link>
                     )}
-                    
+
                     <div className="border-t border-gray-100 my-1"></div>
-                    <button onClick={() => { setIsMobileDropdownOpen(false); handleLogout(); }} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setIsMobileDropdownOpen(false);
+                        handleLogout();
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 items-center gap-2"
+                    >
                       <span>🚪</span>
                       Sign out
                     </button>
@@ -386,11 +394,26 @@ export default function Navbar() {
                 aria-expanded={isMobileMenuOpen}
                 aria-label="Toggle menu"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   {isMobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
                   )}
                 </svg>
               </button>
@@ -400,30 +423,57 @@ export default function Navbar() {
 
         {/* Mobile Menu for logged out users */}
         {isMobileMenuOpen && !session && (
-          <div ref={mobileMenuRef} className="md:hidden border-t border-gray-200 py-2 bg-white">
+          <div
+            ref={mobileMenuRef}
+            className="md:hidden border-t border-gray-200 py-2 bg-white"
+          >
             <div className="flex flex-col space-y-1">
-              <Link href="/" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/"
+                className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <span>🏠</span>
                 Home
               </Link>
-              <Link href="/courses" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/courses"
+                className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <span>📚</span>
                 Courses
               </Link>
-              <Link href="/about" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/about"
+                className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <span>ℹ️</span>
                 About
               </Link>
-              <Link href="/contact" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/contact"
+                className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <span>📞</span>
                 Contact
               </Link>
               <div className="border-t border-gray-200 my-2"></div>
-              <Link href="/login" className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/login"
+                className="px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors font-medium rounded-lg flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <span>🔑</span>
                 Sign in
               </Link>
-              <Link href="/register" className="px-4 py-3 bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium rounded-lg text-center mx-4 flex items-center justify-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/register"
+                className="px-4 py-3 bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium rounded-lg text-center mx-4 flex items-center justify-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <span>🚀</span>
                 Get Started
               </Link>

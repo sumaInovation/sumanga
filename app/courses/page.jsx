@@ -28,7 +28,7 @@ export default async function CoursesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Our Courses</h1>
+          <h1 className="text-3xl font-bold text-gray-900">PLC & Robotics Courses</h1>
           <p className="mt-2 text-lg text-gray-600">
             Explore our comprehensive training programs designed for skill development
           </p>
@@ -166,7 +166,7 @@ export default async function CoursesPage() {
                       <div>
                         {/* ✅ UPDATED: Use basePrice instead of baseFees */}
                         <p className="text-2xl font-bold text-gray-900">
-                          ₹{course.basePrice?.toLocaleString() || '0'}
+                          {course.basePrice?.toLocaleString() || '0'}LKR
                         </p>
                         {/* ✅ UPDATED: Check for batch offers instead of specialOffers */}
                         {course.batches?.some(batch => batch.offer > 0) && !nextBatch?.offer && (

@@ -65,7 +65,7 @@ function PriceDisplay({ course }) {
   return (
     <div className="text-center mb-6">
       <p className="text-4xl font-bold text-white">
-        {currency} {basePrice?.toLocaleString()}
+        {basePrice?.toLocaleString()}LKR
       </p>
       <p className="text-sm text-gray-400 mt-2">Course fees</p>
     </div>
@@ -141,9 +141,7 @@ function NextBatchInfo({ course }) {
           <p className="text-blue-200 text-sm">
             📅 Starts: {formatDate(nextBatch.startDate)}
           </p>
-          <p className="text-blue-200 text-sm">
-            🏁 Ends: {formatDate(nextBatch.endDate)}
-          </p>
+          
           <p className="text-blue-200 text-sm">
             🕐 {nextBatch.conductDays?.join(', ')} at {nextBatch.conductTime}
           </p>
@@ -294,6 +292,99 @@ function GalleryTab({ course }) {
   );
 }
 
+// ✅ UPDATED: Expandable Syllabus Component
+function ExpandableSyllabus({ syllabus }) {
+  const [expandedDay, setExpandedDay] = useState(null);
+
+  const toggleDay = (dayIndex) => {
+    if (expandedDay === dayIndex) {
+      setExpandedDay(null);
+    } else {
+      setExpandedDay(dayIndex);
+    }
+  };
+
+  if (!syllabus || syllabus.length === 0) {
+    return (
+      <p className="text-gray-400">Syllabus not available yet.</p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {syllabus.map((day, index) => (
+        <div key={day._id || index} className="border border-gray-700 rounded-lg bg-gray-800 overflow-hidden">
+          {/* Day Header - Always Visible */}
+          <button
+            onClick={() => toggleDay(index)}
+            className="w-full text-left p-4 hover:bg-gray-750 transition-colors flex justify-between items-center"
+          >
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg text-white">
+                Day {day.dayNumber}: {day.dayTitle}
+              </h3>
+              <p className="text-sm text-gray-400 mt-1">
+                Total Duration: {day.totalDuration} minutes
+              </p>
+            </div>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-400 mr-3">
+                {day.items?.length || 0} items
+              </span>
+              <svg
+                className={`w-5 h-5 text-gray-400 transform transition-transform ${
+                  expandedDay === index ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </button>
+
+          {/* Day Content - Expandable */}
+          {expandedDay === index && (
+            <div className="px-4 pb-4 border-t border-gray-700 pt-4">
+              <div className="space-y-3">
+                {day.items?.map((item, itemIndex) => (
+                  <div
+                    key={itemIndex}
+                    className="flex items-center justify-between py-3 px-3 bg-gray-750 rounded-lg border border-gray-600"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <p className="font-medium text-white">{item.title}</p>
+                        <span className="text-xs px-2 py-1 bg-gray-600 text-gray-300 rounded-full capitalize">
+                          {item.type}
+                        </span>
+                      </div>
+                      {item.description && (
+                        <p className="text-sm text-gray-300">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded-md min-w-16 text-center">
+                      {item.duration} min
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Tab Content Component
 function TabContent({ activeTab, course, session }) {
   switch (activeTab) {
@@ -303,45 +394,7 @@ function TabContent({ activeTab, course, session }) {
           <h2 className="text-2xl font-bold text-white mb-6">
             Course Syllabus
           </h2>
-          {course.syllabus?.length > 0 ? (
-            <div className="space-y-4">
-              {course.syllabus.map((day, index) => (
-                <div key={day._id || index} className="border border-gray-700 rounded-lg p-4 bg-gray-800">
-                  <h3 className="font-semibold text-lg mb-2 text-white">
-                    Day {day.dayNumber}: {day.dayTitle}
-                  </h3>
-                  <p className="text-sm text-gray-400 mb-3">
-                    Total Duration: {day.totalDuration} minutes
-                  </p>
-                  <div className="space-y-2">
-                    {day.items?.map((item, itemIndex) => (
-                      <div
-                        key={itemIndex}
-                        className="flex items-center justify-between py-2 border-b border-gray-700 last:border-b-0"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-200">{item.title}</p>
-                          <p className="text-sm text-gray-400 capitalize">
-                            {item.type}
-                          </p>
-                          {item.description && (
-                            <p className="text-sm text-gray-300 mt-1">
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-sm text-gray-400">
-                          {item.duration} min
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-400">Syllabus not available yet.</p>
-          )}
+          <ExpandableSyllabus syllabus={course.syllabus} />
         </div>
       );
 
@@ -571,13 +624,13 @@ function BatchEnrollment({ batch, course, session, onRegistrationSuccess }) {
             </div>
             <div className="flex items-center justify-between font-semibold">
               <span className="text-white">Final Price:</span>
-              <span className="text-green-400 text-lg">₹{batchPrice?.toLocaleString()}</span>
+              <span className="text-green-400 text-lg">{batchPrice?.toLocaleString()} LKR</span>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-between font-semibold">
             <span className="text-white">Course Fee:</span>
-            <span className="text-white text-lg">₹{batchPrice?.toLocaleString()}</span>
+            <span className="text-white text-lg">{batchPrice?.toLocaleString()} LKR</span>
           </div>
         )}
       </div>
@@ -601,12 +654,7 @@ function BatchEnrollment({ batch, course, session, onRegistrationSuccess }) {
         )}
       </button>
 
-      {/* ✅ Add debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-2 text-xs text-gray-500">
-          Debug: Logged in: {session ? 'Yes' : 'No'} | User: {session?.user?.email}
-        </div>
-      )}
+     
     </div>
   );
 }
@@ -648,7 +696,7 @@ function BatchInfo({ batch, course }) {
       </p>
       {batch.offer > 0 && (
         <p className="text-xs text-green-400 font-medium">
-          🎁 {batch.offer}% off: ₹ {batchPrice?.toLocaleString()}
+          🎁 {batch.offer}% off: {batchPrice?.toLocaleString()}LKR
         </p>
       )}
       <button
@@ -942,7 +990,7 @@ export default function CourseDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Course Fee:</span>
-                  <span className="font-medium text-white">₹ {course.basePrice?.toLocaleString()}</span>
+                  <span className="font-medium text-white"> {course.basePrice?.toLocaleString()} LKR</span>
                 </div>
               </div>
             </div>
