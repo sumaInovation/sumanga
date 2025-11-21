@@ -1,6 +1,6 @@
 // app/api/user/student-profile/route.js
 import { getServerSession } from "next-auth";
-import { authOptions } from "@lib/auth-options";
+import { authOptions } from "@/lib/auth-options";
 import User from "@/models/User";
 import { connectDB } from "@/lib/mongodb";
 
