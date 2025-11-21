@@ -13,7 +13,7 @@ const paymentHistorySchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'card', 'upi', 'bank_transfer', 'online'],
+    enum: ['cash', 'card', 'upi', 'bank_transfer', 'online','payhere_sandbox'],
     required: true
   },
   transactionId: {
