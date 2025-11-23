@@ -70,7 +70,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl font-bold mb-6">About Sumanga Institute</h1>
+            <h1 className="text-5xl font-bold mb-6">About  SumaAumationlk</h1>
             <p className="text-xl max-w-3xl mx-auto mb-8">
               Empowering the next generation of automation engineers and robotics specialists 
               with industry-relevant skills and hands-on training.
