@@ -52,6 +52,7 @@ export default function CourseForm({
     shortDescription: "",
     category: "plc-programming",
     level: "beginner",
+    thumbnail: "",
     
     // ✅ SIMPLIFIED: Direct basePrice and duration
     basePrice: 0,
@@ -191,6 +192,7 @@ export default function CourseForm({
         shortDescription: formData.shortDescription || "",
         category: formData.category || "plc-programming",
         level: formData.level || "beginner",
+        thumbnail: formData.thumbnail || "", // ✅ INCLUDED: Thumbnail URL
 
         // ✅ SIMPLIFIED: Direct basePrice and duration
         basePrice: parseInt(formData.basePrice) || 0,
@@ -222,6 +224,7 @@ export default function CourseForm({
       // ✅ ADDED: Debug logging to verify data including dates
       console.log("🎯 FINAL SUBMIT DATA:", {
         title: submitData.title,
+        thumbnail: submitData.thumbnail,
         basePrice: submitData.basePrice,
         duration: submitData.duration,
         batches: submitData.batches.map(batch => ({
@@ -365,7 +368,6 @@ export default function CourseForm({
             <MediaVideosTab 
               formData={formData}
               setFormData={setFormData}
-              onInputChange={handleInputChange}
               onAddArrayItem={addArrayItem}
               onRemoveArrayItem={removeArrayItem}
               onGalleryChange={handleGalleryChange}
@@ -476,6 +478,20 @@ function BasicInfoTab({ formData, onInputChange, onNumberChange }) {
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="e.g., PLC-101"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Thumbnail URL *
+          </label>
+          <input
+            type="text"
+            name="thumbnail"
+            value={formData.thumbnail || ''}
+            onChange={onInputChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder="e.g., https://example.com/thumbnail.jpg"
           />
         </div>
 
@@ -803,8 +819,8 @@ function CourseBatchesTab({
   );
 }
 
-// Media & Videos Tab (unchanged)
-function MediaVideosTab({ formData, setFormData, onInputChange, onAddArrayItem, onRemoveArrayItem, onGalleryChange }) {
+// ✅ CORRECTED: Media & Videos Tab - DUPLICATE THUMBNAIL REMOVED
+function MediaVideosTab({ formData, setFormData, onAddArrayItem, onRemoveArrayItem, onGalleryChange }) {
   const safeGallery = Array.isArray(formData.gallery) ? formData.gallery : [];
   const safeVideoCollections = Array.isArray(formData.videoCollections) ? formData.videoCollections : [];
 
@@ -865,22 +881,7 @@ function MediaVideosTab({ formData, setFormData, onInputChange, onAddArrayItem, 
     <div className="bg-white rounded-lg shadow-sm p-6 space-y-8">
       <h2 className="text-2xl font-bold text-gray-900">Media & Video Collections</h2>
       
-      {/* Media URLs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Thumbnail URL
-          </label>
-          <input
-            type="url"
-            name="thumbnail"
-            value={formData.thumbnail || ""}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="https://example.com/thumbnail.jpg"
-          />
-        </div>
-      </div>
+      {/* ✅ REMOVED: Duplicate thumbnail URL section */}
 
       {/* Gallery Images */}
       <div>

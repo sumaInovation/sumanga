@@ -13,7 +13,7 @@ const syllabusItemSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['theory', 'practical', 'project', 'demo', 'assessment'],
+    enum: ['theory', 'practical', 'project', 'demo', 'assessment', 'workshop'],
     default: 'theory'
   },
   description: String,
@@ -126,6 +126,7 @@ const courseSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+   thumbnail: String,
   code: {
     type: String,
     required: true,

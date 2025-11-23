@@ -38,62 +38,38 @@ export default async function CoursesPage() {
         {courses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => {
-              // ✅ UPDATED: Calculate total hours from duration in weeks
-              const totalHours = (course.duration || 0) * 40; // Assuming 40 hours per week
-
-              // ✅ UPDATED: Calculate total enrolled students across all batches
+              const totalHours = (course.duration || 0) * 40;
               const totalEnrolledStudents = course.batches?.reduce((total, batch) => {
                 return total + (batch.enrolledStudents?.length || 0);
               }, 0) || 0;
 
-              // ✅ UPDATED: Find active batches
-              const activeBatchesCount = course.batches?.filter(
-                batch => batch.status === 'upcoming' || batch.status === 'ongoing'
-              ).length || 0;
-
-              // ✅ ADDED: Find next batch start date
               const nextBatch = course.batches
                 ?.filter(batch => batch.status === 'upcoming')
                 ?.sort((a, b) => new Date(a.startDate) - new Date(b.startDate))[0];
 
-              // ✅ ADDED: Format date for display
-              const formatDate = (dateString) => {
-                if (!dateString) return null;
-                const date = new Date(dateString);
-                return date.toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'short'
-                });
-              };
-
               return (
                 <div
                   key={course._id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 flex flex-col h-[480px] overflow-hidden"
                 >
                   {/* Course Image */}
-                  <div className="h-48 bg-gray-200 relative">
+                  <div className="h-40 bg-gray-200 relative">
                     {course.thumbnail ? (
                       <img
                         src={course.thumbnail}
                         alt={course.title}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
                       />
-                    ) : null}
-                    <div 
-                      className={`w-full h-full ${course.thumbnail ? 'hidden' : 'flex'} bg-gradient-to-r from-blue-500 to-purple-600 items-center justify-center`}
-                    >
-                      <span className="text-white text-lg font-semibold">
-                        {course.title.substring(0, 2).toUpperCase()}
-                      </span>
-                    </div>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span className="text-white text-lg font-semibold">
+                          {course.title.substring(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     
-                    {/* Status Badge */}
-                    <div className="absolute top-4 right-4">
+                    {/* Badges Container */}
+                    <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         course.isPublished 
                           ? 'bg-green-100 text-green-800' 
@@ -101,114 +77,80 @@ export default async function CoursesPage() {
                       }`}>
                         {course.isPublished ? 'Published' : 'Draft'}
                       </span>
-                    </div>
-
-                    {/* Active Batches Badge */}
-                    {activeBatchesCount > 0 && (
-                      <div className="absolute top-4 left-4">
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                          {activeBatchesCount} Active Batch{activeBatchesCount > 1 ? 'es' : ''}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* ✅ ADDED: Next Batch Date Badge */}
-                    {nextBatch?.startDate && (
-                      <div className="absolute bottom-4 left-4">
+                      
+                      {nextBatch?.startDate && (
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
-                          🗓️ Starts {formatDate(nextBatch.startDate)}
+                          🗓️ {new Date(nextBatch.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Course Content */}
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
-                        {course.level}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {totalHours} hours
-                      </span>
+                  <div className="p-5 flex flex-col flex-1">
+                    {/* Course Title and Basic Info */}
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+                          {course.level}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {totalHours}h
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2">
+                        {course.title}
+                      </h3>
+                      
+                      <p className="text-gray-600 text-sm line-clamp-2">
+                        {course.shortDescription || course.description}
+                      </p>
                     </div>
 
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {course.title}
-                    </h3>
-
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      {course.shortDescription || course.description}
-                    </p>
-
-                    {/* ✅ ADDED: Next Batch Info */}
+                    {/* Batch Info - Only show if exists */}
                     {nextBatch && (
                       <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex justify-between items-center text-sm">
                           <span className="font-medium text-blue-800">
-                            Next Batch: {nextBatch.batchName}
+                            {nextBatch.batchName}
                           </span>
-                          {nextBatch.startDate && (
-                            <span className="text-blue-600">
-                              {formatDate(nextBatch.startDate)}
+                          {nextBatch.offer > 0 && (
+                            <span className="text-green-600 font-medium">
+                              {nextBatch.offer}% OFF
                             </span>
                           )}
                         </div>
-                        {nextBatch.offer > 0 && (
-                          <p className="text-xs text-green-600 mt-1">
-                            🎁 {nextBatch.offer}% discount available
-                          </p>
-                        )}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        {/* ✅ UPDATED: Use basePrice instead of baseFees */}
-                        <p className="text-2xl font-bold text-gray-900">
-                          {course.basePrice?.toLocaleString() || '0'}LKR
-                        </p>
-                        {/* ✅ UPDATED: Check for batch offers instead of specialOffers */}
-                        {course.batches?.some(batch => batch.offer > 0) && !nextBatch?.offer && (
-                          <p className="text-sm text-green-600">Special offers available</p>
-                        )}
+                    {/* Stats and Price */}
+                    <div className="mt-auto space-y-3">
+                      {/* Enrollment and Duration */}
+                      <div className="flex justify-between items-center text-sm text-gray-600">
+                        <span>👥 {totalEnrolledStudents} enrolled</span>
+                        <span>📅 {course.duration || 0} weeks</span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">
-                          {totalEnrolledStudents} enrolled
-                        </p>
-                      </div>
-                    </div>
 
-                    {/* Course Meta Info */}
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <span className="capitalize">
-                        {course.category?.replace('-', ' ')}
-                      </span>
-                      <span>
-                        {course.duration || 0} weeks
-                      </span>
-                    </div>
-
-                    {/* CTA Button */}
-                    <div className="flex items-center justify-between border-t pt-4">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                          <span className="text-xs font-medium text-gray-600">
-                            CS
-                          </span>
+                      {/* Price Row */}
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-xl font-bold text-gray-900">
+                            {course.basePrice?.toLocaleString() || '0'} LKR
+                          </p>
+                          {course.batches?.some(batch => batch.offer > 0) && !nextBatch?.offer && (
+                            <p className="text-xs text-green-600">Special offers available</p>
+                          )}
                         </div>
-                        <span className="ml-2 text-sm text-gray-600">
-                          Course Station
-                        </span>
+                        
+                        {/* CTA Button */}
+                        <Link
+                          href={`/courses/${course._id}`}
+                          className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200 shadow-sm"
+                        >
+                          View Course
+                        </Link>
                       </div>
-
-                      <Link
-                        href={`/courses/${course._id}`}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                      >
-                        View Details
-                      </Link>
                     </div>
                   </div>
                 </div>
@@ -237,80 +179,32 @@ export default async function CoursesPage() {
           </div>
         )}
 
-        {/* Stats Section */}
+        {/* Simplified Stats Section */}
         {courses.length > 0 && (
-          <div className="mt-12 bg-white rounded-lg shadow-sm p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{courses.length}</p>
+          <div className="mt-12 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6 text-center">Course Overview</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-2xl font-bold text-blue-600">{courses.length}</p>
                 <p className="text-sm text-gray-600">Total Courses</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="bg-green-50 rounded-lg p-4">
+                <p className="text-2xl font-bold text-green-600">
                   {courses.filter(course => course.isPublished).length}
                 </p>
                 <p className="text-sm text-gray-600">Published</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-2xl font-bold text-purple-600">
                   {courses.reduce((total, course) => total + (course.batches?.reduce((sum, batch) => sum + (batch.enrolledStudents?.length || 0), 0) || 0), 0)}
                 </p>
-                <p className="text-sm text-gray-600">Total Enrollments</p>
+                <p className="text-sm text-gray-600">Enrollments</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="bg-orange-50 rounded-lg p-4">
+                <p className="text-2xl font-bold text-orange-600">
                   {courses.reduce((total, course) => total + (course.batches?.filter(batch => batch.status === 'upcoming' || batch.status === 'ongoing').length || 0), 0)}
                 </p>
                 <p className="text-sm text-gray-600">Active Batches</p>
-              </div>
-            </div>
-
-            {/* ✅ ADDED: Upcoming Batches Summary */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Batches</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {courses.flatMap(course => 
-                  course.batches
-                    ?.filter(batch => batch.status === 'upcoming')
-                    ?.map(batch => ({
-                      ...batch,
-                      courseTitle: course.title,
-                      courseId: course._id
-                    })) || []
-                )
-                .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
-                .slice(0, 6) // Show only next 6 batches
-                .map((batch, index) => (
-                  <Link
-                    key={`${batch.courseId}-${batch._id}-${index}`}
-                    href={`/courses/${batch.courseId}`}
-                    className="block p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-medium text-gray-900 text-sm line-clamp-1">
-                        {batch.courseTitle}
-                      </span>
-                      <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                        {batch.batchName}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-1">
-                      🗓️ {batch.startDate ? new Date(batch.startDate).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      }) : 'TBA'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      🕐 {batch.conductDays?.join(', ')} at {batch.conductTime}
-                    </p>
-                    {batch.offer > 0 && (
-                      <p className="text-xs text-green-600 mt-1">
-                        🎁 {batch.offer}% discount
-                      </p>
-                    )}
-                  </Link>
-                ))}
               </div>
             </div>
           </div>

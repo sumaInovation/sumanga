@@ -17,7 +17,7 @@ const connectDB = async () => {
 
 const updateBasicPLCSyllabus = async () => {
   try {
-    const courseCode = "PLC101"; // Basic PLC Programming course
+    const courseCode = "ROB-101"; // Basic PLC Programming course
     
     const course = await Course.findOne({ code: courseCode });
     if (!course) {
@@ -28,348 +28,1032 @@ const updateBasicPLCSyllabus = async () => {
     // Update the course with exact 19-day syllabus from your provided structure
     course.syllabus = [
       {
-        dayNumber: 1,
-        dayTitle: "Digital Fundamentals & Electromechanical Control",
-        items: [
-          { title: "Understanding Digital vs. Analog Concepts", duration: 60, type: "theory" },
-          { title: "Basics of the Binary Number System", duration: 75, type: "theory" },
-          { title: "Performing Arithmetic in Binary", duration: 75, type: "theory" },
-          { title: "Overview of Fundamental Logic Gates", duration: 90, type: "theory" },
-          { title: "Analyzing Logic Circuits using Truth Tables", duration: 60, type: "practical" },
-          { title: "Interpreting Logic Circuits using Boolean Expressions", duration: 75, type: "theory" },
-          { title: "Designing Logic Circuits Based on Given Functions", duration: 90, type: "practical" },
-          { title: "Introduction to Minterms and Logic Simplification", duration: 60, type: "theory" },
-          { title: "Creating Logic Circuits from Truth Tables", duration: 75, type: "practical" },
-          { title: "Steps to Design a Complete Control Circuit", duration: 60, type: "theory" },
-          { title: "Introduction to Industrial Contactors", duration: 60, type: "theory" },
-          { title: "Practical 01: Wiring a Magnetic Contactor with Safety Precautions", duration: 120, type: "practical" },
-          { title: "Practical 02: Control a Load Using Contactor NO/NC Terminals", duration: 90, type: "practical" },
-          { title: "Basic Contactor Application Examples", duration: 60, type: "theory" },
-          { title: "Techniques for Designing Contactor-Based Control Systems", duration: 75, type: "theory" },
-          { title: "Practical 03: Build a Basic Conveyor Control Circuit Using Contactors", duration: 120, type: "practical" }
+        "dayNumber": 1,
+        "dayTitle": "Programming Fundamentals & Basic Robotics",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Introduction to Programming Concepts",
+            "duration": 45,
+            "type": "theory",
+            "description": "What is a program, algorithms, flow of execution, and programming paradigms"
+          },
+          {
+            "title": "C Programming Basics & Examples",
+            "duration": 60,
+            "type": "theory",
+            "description": "C language syntax, structure, data types, and basic program examples"
+          },
+          {
+            "title": "Microcontroller Architecture Overview",
+            "duration": 45,
+            "type": "theory",
+            "description": "Microcontroller vs microprocessor, architecture components, and applications"
+          },
+          {
+            "title": "Arduino Platform Introduction",
+            "duration": 45,
+            "type": "theory",
+            "description": "Arduino ecosystem, board types, IDE setup, and basic programming structure"
+          },
+          {
+            "title": "Basic LED Control Practical",
+            "duration": 45,
+            "type": "practical",
+            "description": "Controlling LEDs with Arduino digital outputs and basic circuits"
+          },
+          {
+            "title": "High Power Device Control with Relays",
+            "duration": 60,
+            "type": "practical",
+            "description": "Interfacing relays to control high voltage/current devices safely"
+          },
+          {
+            "title": "Seven Segment Display Theory",
+            "duration": 30,
+            "type": "theory",
+            "description": "Seven segment display working principle, common anode/cathode types"
+          },
+          {
+            "title": "Seven Segment Display Practical",
+            "duration": 45,
+            "type": "practical",
+            "description": "Wiring and programming seven segment displays with Arduino"
+          },
+          {
+            "title": "Pneumatic Systems Fundamentals",
+            "duration": 45,
+            "type": "theory",
+            "description": "Pneumatic principles, components, and industrial applications"
+          },
+          {
+            "title": "Pneumatic Components Identification",
+            "duration": 30,
+            "type": "demo",
+            "description": "Hands-on identification of cylinders, valves, compressors, and fittings"
+          },
+          {
+            "title": "Pick and Place Robot Arm Project",
+            "duration": 60,
+            "type": "project",
+            "description": "Building and programming a pneumatic pick and place robotic arm"
+          }
         ]
       },
       {
-        dayNumber: 2,
-        dayTitle: "PLC Basics & FBD Programming",
-        items: [
-          { title: "What is a Program? (Logic vs. Electronic Control)", duration: 45, type: "theory" },
-          { title: "Introduction to PLCs and Their Role in Automation", duration: 60, type: "theory" },
-          { title: "PLC Programming Languages & Execution Cycle", duration: 75, type: "theory" },
-          { title: "Overview of Siemens S7-200 Series", duration: 60, type: "theory" },
-          { title: "Understanding PLC Input / Output Addressing", duration: 75, type: "theory" },
-          { title: "Introduction to Functional Block Diagrams (FBD)", duration: 75, type: "theory" },
-          { title: "FBD Gate-based Examples - AND / OR Blocks", duration: 60, type: "practical" },
-          { title: "Multi-input Logic", duration: 60, type: "practical" },
-          { title: "Buffer & NOT Functions", duration: 60, type: "practical" },
-          { title: "Multi-network Programming", duration: 60, type: "theory" },
-          { title: "Introduction to the PLC Memory Bit Area", duration: 45, type: "theory" },
-          { title: "Designing Complex Logic Circuits in FBD", duration: 90, type: "practical" },
-          { title: "PLC Wiring Hands-on - S7-200", duration: 45, type: "practical" },
-          { title: "PLC Wiring Hands-on - S7-300", duration: 45, type: "practical" },
-          { title: "PLC Wiring Hands-on - S7-400", duration: 45, type: "practical" },
-          { title: "PLC Wiring Hands-on - S7-1200", duration: 45, type: "practical" },
-          { title: "PLC Wiring Hands-on - Siemens LOGO", duration: 45, type: "practical" },
-          { title: "Digital Input Wiring - Interfacing Pushbuttons", duration: 60, type: "practical" },
-          { title: "Interfacing Digital Sensors - Inductive Sensors", duration: 45, type: "practical" },
-          { title: "Interfacing Digital Sensors - Capacitive Sensors", duration: 45, type: "practical" },
-          { title: "Interfacing Digital Sensors - Photoelectric Sensors", duration: 45, type: "practical" },
-          { title: "Interfacing Digital Sensors - Reflective Sensors", duration: 45, type: "practical" },
-          { title: "Interfacing Digital Sensors - Level Detection Sensors", duration: 45, type: "practical" },
-          { title: "Interfacing Digital Sensors - Fiber Optic Sensors", duration: 45, type: "practical" }
+        "dayNumber": 2,
+        "dayTitle": "Memory Management & Motor Control Fundamentals",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Memory Management in Embedded Systems",
+            "duration": 45,
+            "type": "theory",
+            "description": "RAM, ROM, Flash memory, memory mapping, and optimization techniques"
+          },
+          {
+            "title": "C Variables and Data Types",
+            "duration": 60,
+            "type": "theory",
+            "description": "Variable declaration, data types, scope, and memory allocation"
+          },
+          {
+            "title": "Arithmetic Operations in C",
+            "duration": 45,
+            "type": "theory",
+            "description": "Basic arithmetic, operator precedence, and expression evaluation"
+          },
+          {
+            "title": "User Input with scanf()",
+            "duration": 45,
+            "type": "practical",
+            "description": "Getting user inputs through serial monitor and processing data"
+          },
+          {
+            "title": "Average Calculation Project",
+            "duration": 45,
+            "type": "project",
+            "description": "Program to calculate average of multiple numbers with user input"
+          },
+          {
+            "title": "DC Motor Control Theory",
+            "duration": 45,
+            "type": "theory",
+            "description": "DC motor working principles, specifications, and control methods"
+          },
+          {
+            "title": "L298N Motor Driver Deep Dive",
+            "duration": 45,
+            "type": "theory",
+            "description": "Motor driver IC working, H-bridge configuration, and current handling"
+          },
+          {
+            "title": "Robot Chassis Movement Practical",
+            "duration": 60,
+            "type": "practical",
+            "description": "Controlling robot chassis movement with motor driver and Arduino"
+          },
+          {
+            "title": "PWM Theory & Applications",
+            "duration": 45,
+            "type": "theory",
+            "description": "Pulse Width Modulation principles, duty cycle, and frequency"
+          },
+          {
+            "title": "PWM Intensity Control Practical",
+            "duration": 30,
+            "type": "practical",
+            "description": "Controlling LED intensity using PWM signals"
+          },
+          {
+            "title": "PWM Oscilloscope Analysis",
+            "duration": 30,
+            "type": "practical",
+            "description": "Observing PWM waveforms and analyzing signal characteristics"
+          },
+          {
+            "title": "DC Motor Speed Control with PWM",
+            "duration": 45,
+            "type": "practical",
+            "description": "Speed control of DC motors using PWM technique"
+          },
+          {
+            "title": "DTMF System Practical",
+            "duration": 45,
+            "type": "project",
+            "description": "Dual Tone Multi Frequency system for remote control applications"
+          }
         ]
       },
       {
-        dayNumber: 3,
-        dayTitle: "Ladder Logic & Basic Control",
-        items: [
-          { title: "Revision of FBD Programming", duration: 60, type: "theory" },
-          { title: "Introduction to Ladder Diagram Programming", duration: 75, type: "theory" },
-          { title: "Ladder Logic Simulation Examples", duration: 90, type: "practical" },
-          { title: "Basic Ladder Techniques (AND / OR / NOT)", duration: 75, type: "practical" },
-          { title: "Understanding the PLC Scan Cycle", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 01 - Normally Open Contact", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 01 - Normally Closed Contact", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 01 - Output Coil", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 01 - NOT Function", duration: 45, type: "theory" },
-          { title: "Latching / Self-Holding Circuits", duration: 60, type: "theory" },
-          { title: "Bit Logic – Part 02 - SET Coil", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 02 - RESET Coil", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 02 - Positive Edge Contact", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 02 - Negative Edge Contact", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 02 - Immediate Input Instructions", duration: 45, type: "theory" },
-          { title: "Bit Logic – Part 02 - Immediate Output Instructions", duration: 45, type: "theory" },
-          { title: "Introduction to Relays", duration: 60, type: "theory" },
-          { title: "Practical 01: Relay Wiring & Testing", duration: 90, type: "practical" },
-          { title: "Practical 02: Develop a Relay-based Motor Switching Circuit", duration: 120, type: "practical" },
-          { title: "Understanding PLC Output Wiring", duration: 60, type: "theory" },
-          { title: "Introduction to 7-Segment Displays", duration: 45, type: "theory" },
-          { title: "BCD to 7-Segment Driver IC", duration: 60, type: "theory" },
-          { title: "Practical 03: Interfacing a 7-Segment with PLC", duration: 90, type: "practical" },
-          { title: "Practical 04: Create a Numeric Display Using Weighted Logic", duration: 120, type: "practical" }
+        "dayNumber": 3,
+        "dayTitle": "Decision Making & Sensor Integration",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Decision Making in Programming",
+            "duration": 45,
+            "type": "theory",
+            "description": "Conditional logic, program flow control, and decision structures"
+          },
+          {
+            "title": "If-Condition Fundamentals",
+            "duration": 60,
+            "type": "theory",
+            "description": "If statement syntax, logical expressions, and conditional execution"
+          },
+          {
+            "title": "If-Condition Examples Part 1",
+            "duration": 45,
+            "type": "practical",
+            "description": "Practical programming examples using simple if conditions"
+          },
+          {
+            "title": "Nested If Conditions",
+            "duration": 45,
+            "type": "theory",
+            "description": "Complex decision making with nested if statements and logic"
+          },
+          {
+            "title": "If-Condition Examples Part 2",
+            "duration": 45,
+            "type": "practical",
+            "description": "Advanced examples with multiple conditions and nested logic"
+          },
+          {
+            "title": "Push Button Interfacing Theory",
+            "duration": 30,
+            "type": "theory",
+            "description": "Push button working, debouncing, and input reading techniques"
+          },
+          {
+            "title": "Pull-Down Configuration Practical",
+            "duration": 30,
+            "type": "practical",
+            "description": "Implementing pull-down resistors for stable button inputs"
+          },
+          {
+            "title": "Pull-Up Configuration Practical",
+            "duration": 30,
+            "type": "practical",
+            "description": "Using external pull-up resistors for input stabilization"
+          },
+          {
+            "title": "Internal Pull-Up Resistors",
+            "duration": 30,
+            "type": "practical",
+            "description": "Activating and using microcontroller internal pull-up resistors"
+          },
+          {
+            "title": "Industrial Sensors Comprehensive Guide",
+            "duration": 90,
+            "type": "theory",
+            "description": "Complete overview of industrial sensors and their applications"
+          },
+          {
+            "title": "Proximity Sensors (Inductive/Capacitive)",
+            "duration": 30,
+            "type": "demo",
+            "description": "Working with inductive and capacitive proximity sensors"
+          },
+          {
+            "title": "Photoelectric & Fiber Optic Sensors",
+            "duration": 30,
+            "type": "demo",
+            "description": "Through-beam, reflective photoelectric sensors and fiber optics"
+          },
+          {
+            "title": "Level & Reed Sensors",
+            "duration": 30,
+            "type": "demo",
+            "description": "Water level sensors, reed switches, and magnetic sensing"
+          },
+          {
+            "title": "DC Servo Motor Control Practical",
+            "duration": 60,
+            "type": "practical",
+            "description": "Position control of DC servo motors with PWM signals"
+          }
         ]
       },
       {
-        dayNumber: 4,
-        dayTitle: "Counters & Pneumatics",
-        items: [
-          { title: "Reading and Creating Timing Diagrams", duration: 75, type: "theory" },
-          { title: "Basics of PLC Program Development", duration: 60, type: "theory" },
-          { title: "Practical Programming Examples", duration: 90, type: "practical" },
-          { title: "Introduction to PLC Counters", duration: 60, type: "theory" },
-          { title: "Understanding Up Counters", duration: 75, type: "theory" },
-          { title: "Counter-based Exercises", duration: 90, type: "practical" },
-          { title: "Self-resetting Counters", duration: 60, type: "theory" },
-          { title: "Examples of Auto-reset Counters", duration: 75, type: "practical" },
-          { title: "Introduction to Up/Down Counters", duration: 60, type: "theory" },
-          { title: "Project 01: Customer Queue / Waiting Room Counter", duration: 120, type: "project" },
-          { title: "Basics of Industrial Pneumatics", duration: 90, type: "theory" },
-          { title: "Project 02: Manual Pick-and-Place Pneumatic Arm Using Counters", duration: 150, type: "project" }
+        "dayNumber": 4,
+        "dayTitle": "Advanced Logic & Serial Communication",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Floating Point vs Integer Division",
+            "duration": 45,
+            "type": "theory",
+            "description": "Numerical precision, data type selection, and calculation accuracy"
+          },
+          {
+            "title": "Modulo Operation Applications",
+            "duration": 30,
+            "type": "theory",
+            "description": "Modulo operator uses in programming and real-world applications"
+          },
+          {
+            "title": "Advanced If-Condition Examples",
+            "duration": 45,
+            "type": "practical",
+            "description": "Complex conditional logic with multiple variables"
+          },
+          {
+            "title": "Logical Operators (AND/OR/NOT)",
+            "duration": 45,
+            "type": "theory",
+            "description": "Boolean logic, truth tables, and compound conditions"
+          },
+          {
+            "title": "Logical Operator Examples",
+            "duration": 45,
+            "type": "practical",
+            "description": "Practical applications of logical operators in decision making"
+          },
+          {
+            "title": "Digital Communication Fundamentals",
+            "duration": 45,
+            "type": "theory",
+            "description": "Data transmission, protocols, and communication standards"
+          },
+          {
+            "title": "Serial vs Parallel Communication",
+            "duration": 45,
+            "type": "theory",
+            "description": "Comparison of serial and parallel communication methods"
+          },
+          {
+            "title": "Serial Communication Protocols",
+            "duration": 45,
+            "type": "theory",
+            "description": "UART, SPI, I2C protocols and their characteristics"
+          },
+          {
+            "title": "RS-232 Protocol Theory",
+            "duration": 30,
+            "type": "theory",
+            "description": "RS-232 standard, signal levels, and handshaking"
+          },
+          {
+            "title": "Arduino to PC Data Transmission",
+            "duration": 45,
+            "type": "practical",
+            "description": "Sending data from Arduino to PC via serial communication"
+          },
+          {
+            "title": "PC to Arduino Data Reception",
+            "duration": 45,
+            "type": "practical",
+            "description": "Receiving and processing data from PC to Arduino"
+          },
+          {
+            "title": "Device Control via Serial Commands",
+            "duration": 45,
+            "type": "practical",
+            "description": "Controlling multiple devices using serial command parsing"
+          },
+          {
+            "title": "Bluetooth Communication Theory",
+            "duration": 30,
+            "type": "theory",
+            "description": "Bluetooth protocol stack, pairing, and data exchange"
+          },
+          {
+            "title": "Bluetooth Device Control",
+            "duration": 45,
+            "type": "practical",
+            "description": "Wireless device control using Bluetooth modules"
+          },
+          {
+            "title": "Elevator Control Project",
+            "duration": 60,
+            "type": "project",
+            "description": "Complete elevator simulation with decision making logic"
+          }
         ]
       },
       {
-        dayNumber: 5,
-        dayTitle: "Timers & Conveyor Projects",
-        items: [
-          { title: "Timer-based Timing Diagram Exercises", duration: 90, type: "theory" },
-          { title: "Understanding PLC Timers", duration: 75, type: "theory" },
-          { title: "ON Delay Timer", duration: 60, type: "theory" },
-          { title: "Timer Example Problems", duration: 90, type: "practical" },
-          { title: "Self-reset Timers", duration: 60, type: "theory" },
-          { title: "Self-reset Timer Exercises", duration: 75, type: "practical" },
-          { title: "Practical 01: Build a Light-blinking Sequence with Timers", duration: 120, type: "practical" },
-          { title: "Practical 02: Wiring a Basic Conveyor Control Panel", duration: 120, type: "practical" },
-          { title: "Project: Develop a Complete Automated Conveyor System", duration: 180, type: "project" }
+        "dayNumber": 5,
+        "dayTitle": "Analog Systems & Display Interfaces",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Advanced If-Else Conditions",
+            "duration": 60,
+            "type": "theory",
+            "description": "Complex conditional structures and multiple branching"
+          },
+          {
+            "title": "If-Else Advantages & Best Practices",
+            "duration": 45,
+            "type": "theory",
+            "description": "Code optimization, readability, and efficient conditional design"
+          },
+          {
+            "title": "If-Else Practical Examples",
+            "duration": 60,
+            "type": "practical",
+            "description": "Real-world programming scenarios using if-else structures"
+          },
+          {
+            "title": "Analog to Digital Conversion Theory",
+            "duration": 60,
+            "type": "theory",
+            "description": "ADC principles, resolution, sampling, and quantization"
+          },
+          {
+            "title": "Potentiometer Interface Practical",
+            "duration": 45,
+            "type": "practical",
+            "description": "Reading analog values from potentiometers with Arduino ADC"
+          },
+          {
+            "title": "LED Intensity Control with POT",
+            "duration": 45,
+            "type": "practical",
+            "description": "Controlling LED brightness using potentiometer input"
+          },
+          {
+            "title": "Brushless Motor Speed Control",
+            "duration": 60,
+            "type": "practical",
+            "description": "Speed control of brushless DC motors using analog inputs"
+          },
+          {
+            "title": "LCD Display Interface Theory",
+            "duration": 45,
+            "type": "theory",
+            "description": "LCD working, HD44780 controller, and communication protocol"
+          },
+          {
+            "title": "LCD Programming Practical",
+            "duration": 60,
+            "type": "practical",
+            "description": "Interfacing and programming character LCD displays"
+          },
+          {
+            "title": "Flower Plant Monitoring Project",
+            "duration": 60,
+            "type": "project",
+            "description": "Complete plant monitoring system with sensors and display"
+          }
         ]
       },
       {
-        dayNumber: 6,
-        dayTitle: "Flowchart-based Design",
-        items: [
-          { title: "Advanced Timing Diagram Examples", duration: 75, type: "theory" },
-          { title: "Introduction to Flowchart-based Control Design", duration: 90, type: "theory" },
-          { title: "Example Flowchart Problems", duration: 90, type: "practical" },
-          { title: "Project: Basic Water Purification & Filling System", duration: 150, type: "project" },
-          { title: "Techniques for Designing with Flowcharts", duration: 90, type: "theory" },
-          { title: "Completing the Water Filling Automation Project", duration: 120, type: "project" }
+        "dayNumber": 6,
+        "dayTitle": "Flowchart Design & System Integration",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Advanced If-Else Programming",
+            "duration": 60,
+            "type": "practical",
+            "description": "Complex conditional logic with multiple variables and outcomes"
+          },
+          {
+            "title": "Flowchart-Based System Design",
+            "duration": 90,
+            "type": "theory",
+            "description": "Visual programming approach, flowchart symbols, and logic design"
+          },
+          {
+            "title": "Flowchart Example Problems",
+            "duration": 60,
+            "type": "practical",
+            "description": "Solving programming problems using flowchart methodology"
+          },
+          {
+            "title": "Conveyor Belt System Project",
+            "duration": 120,
+            "type": "project",
+            "description": "Designing and implementing automated conveyor system"
+          },
+          {
+            "title": "Professional Wiring Techniques",
+            "duration": 60,
+            "type": "practical",
+            "description": "Industrial wiring standards, cable management, and safety"
+          },
+          {
+            "title": "Flowchart Implementation Workshop",
+            "duration": 60,
+            "type": "workshop",
+            "description": "Converting flowcharts to actual C code implementation"
+          },
+          {
+            "title": "Push Button Positive Edge Detection",
+            "duration": 30,
+            "type": "practical",
+            "description": "Detecting and handling push button rising edge transitions"
+          }
         ]
       },
       {
-        dayNumber: 7,
-        dayTitle: "Decision Making in PLC",
-        items: [
-          { title: "Understanding Decision-Making Concepts", duration: 60, type: "theory" },
-          { title: "Introduction to IF Conditions", duration: 75, type: "theory" },
-          { title: "IF-based Practice Problems", duration: 90, type: "practical" },
-          { title: "Nested IF Structures", duration: 75, type: "theory" },
-          { title: "Nested IF Examples", duration: 90, type: "practical" },
-          { title: "AND/OR Condition Operations", duration: 60, type: "theory" },
-          { title: "AND/OR Logic Exercises", duration: 90, type: "practical" },
-          { title: "Ladder Compare Instructions", duration: 75, type: "theory" },
-          { title: "Practical 01: Queue Management System using Compare Instructions", duration: 120, type: "practical" },
-          { title: "Practical 02: Light Control Design using Comparison Logic", duration: 120, type: "practical" },
-          { title: "Project: Flowchart-based Product Sorting System", duration: 180, type: "project" }
+        "dayNumber": 7,
+        "dayTitle": "Complex Decision Systems & Industrial Projects",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "If-Else-If Ladder Structures",
+            "duration": 90,
+            "type": "theory",
+            "description": "Multiple condition handling with else-if ladder approach"
+          },
+          {
+            "title": "If-Else-If Practical Training",
+            "duration": 90,
+            "type": "practical",
+            "description": "Hands-on programming with complex conditional hierarchies"
+          },
+          {
+            "title": "Product Sorting System Project",
+            "duration": 120,
+            "type": "project",
+            "description": "Automated product sorting based on size/color/weight parameters"
+          },
+          {
+            "title": "Water Treatment Plant Simulation",
+            "duration": 120,
+            "type": "project",
+            "description": "Complete water treatment and bottle filling automation system"
+          },
+          {
+            "title": "Project Debugging & Optimization",
+            "duration": 60,
+            "type": "workshop",
+            "description": "Debugging techniques and code optimization strategies"
+          }
         ]
       },
       {
-        dayNumber: 8,
-        dayTitle: "IF-ELSE Programming & Projects",
-        items: [
-          { title: "Introduction to IF–ELSE Logic", duration: 75, type: "theory" },
-          { title: "IF–ELSE Example Problems", duration: 90, type: "practical" },
-          { title: "Converting IF–ELSE Logic to Ladder", duration: 75, type: "theory" },
-          { title: "Ladder Conversion Techniques", duration: 90, type: "practical" },
-          { title: "Project 01: Multi-level Elevator Control System", duration: 240, type: "project" },
-          { title: "Project 02: Advanced Traffic Signal Automation", duration: 240, type: "project" }
+        "dayNumber": 8,
+        "dayTitle": "Loop Structures & Advanced Motor Control",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Advanced If-Else-If Examples",
+            "duration": 60,
+            "type": "practical",
+            "description": "Complex decision-making scenarios with multiple conditions"
+          },
+          {
+            "title": "While Loop Fundamentals",
+            "duration": 60,
+            "type": "theory",
+            "description": "Loop structures, iteration, and repetitive task automation"
+          },
+          {
+            "title": "While Loop Practical Examples",
+            "duration": 60,
+            "type": "practical",
+            "description": "Implementing various applications using while loops"
+          },
+          {
+            "title": "Light System Design with Loops",
+            "duration": 45,
+            "type": "practical",
+            "description": "Creating dynamic light patterns using loop structures"
+          },
+          {
+            "title": "Intensity Control with Loops",
+            "duration": 45,
+            "type": "practical",
+            "description": "Smooth intensity transitions using iterative control"
+          },
+          {
+            "title": "Stepper Motor Control Theory",
+            "duration": 60,
+            "type": "theory",
+            "description": "Stepper motor working, step modes, and driver circuits"
+          },
+          {
+            "title": "Stepper Position Control Practical",
+            "duration": 60,
+            "type": "practical",
+            "description": "Precise position control of stepper motors with Arduino"
+          },
+          {
+            "title": "AC Servo Motor Theory",
+            "duration": 45,
+            "type": "theory",
+            "description": "AC servo principles, feedback systems, and industrial applications"
+          },
+          {
+            "title": "AC Servo Position Control",
+            "duration": 60,
+            "type": "practical",
+            "description": "Programming AC servo motors for precise angular positioning"
+          }
         ]
       },
       {
-        dayNumber: 9,
-        dayTitle: "PLC Memory & Move Operations",
-        items: [
-          { title: "Overview of PLC RAM", duration: 60, type: "theory" },
-          { title: "Understanding the PLC Memory Map", duration: 75, type: "theory" },
-          { title: "Accessing Bits, Bytes, Words, Double Words - Input Image", duration: 45, type: "theory" },
-          { title: "Accessing Bits, Bytes, Words, Double Words - Output Image", duration: 45, type: "theory" },
-          { title: "Accessing Bits, Bytes, Words, Double Words - Memory Bit Area", duration: 45, type: "theory" },
-          { title: "Introduction to Variable Memory (V Area)", duration: 60, type: "theory" },
-          { title: "Move Operations - Move Byte", duration: 45, type: "theory" },
-          { title: "Move Operations - Move Word", duration: 45, type: "theory" },
-          { title: "Move Operations - Move Double Word", duration: 45, type: "theory" },
-          { title: "Move Operations - Move Real (Float)", duration: 45, type: "theory" },
-          { title: "Move Instruction Examples", duration: 90, type: "practical" },
-          { title: "Practical 01: Light Pattern Design Using MOVE Instructions", duration: 120, type: "practical" },
-          { title: "Project: Modular Production System (MPS) Using Flowcharts", duration: 180, type: "project" }
+        "dayNumber": 9,
+        "dayTitle": "Data Structures & Advanced Lighting Systems",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Advanced While Loop Applications",
+            "duration": 60,
+            "type": "practical",
+            "description": "Complex looping scenarios and infinite loop prevention"
+          },
+          {
+            "title": "Nested While Loops",
+            "duration": 60,
+            "type": "theory",
+            "description": "Multi-dimensional iteration and nested loop patterns"
+          },
+          {
+            "title": "Arrays in C Programming",
+            "duration": 90,
+            "type": "theory",
+            "description": "Array declaration, initialization, access, and manipulation"
+          },
+          {
+            "title": "1D Array Practical Examples",
+            "duration": 60,
+            "type": "practical",
+            "description": "Working with single-dimensional arrays in various applications"
+          },
+          {
+            "title": "RGB LED Theory & Control",
+            "duration": 45,
+            "type": "theory",
+            "description": "RGB color mixing, PWM control, and color generation"
+          },
+          {
+            "title": "NeoPixel LED Systems",
+            "duration": 45,
+            "type": "theory",
+            "description": "Addressable RGB LEDs, protocols, and advanced lighting"
+          },
+          {
+            "title": "NeoPixel Programming Practical",
+            "duration": 60,
+            "type": "practical",
+            "description": "Creating dynamic lighting effects with addressable LEDs"
+          },
+          {
+            "title": "Modular Production System (MPS)",
+            "duration": 120,
+            "type": "project",
+            "description": "Complete industrial production line simulation"
+          }
         ]
       },
       {
-        dayNumber: 10,
-        dayTitle: "Integer Math & HMI",
-        items: [
-          { title: "Introduction to Block Move (BMOV)", duration: 60, type: "theory" },
-          { title: "Integer Operations - Add", duration: 45, type: "theory" },
-          { title: "Integer Operations - Subtract", duration: 45, type: "theory" },
-          { title: "Integer Operations - Multiply", duration: 45, type: "theory" },
-          { title: "Integer Operations - Divide", duration: 45, type: "theory" },
-          { title: "Integer Operations - Increment", duration: 45, type: "theory" },
-          { title: "Integer Operations - Decrement", duration: 45, type: "theory" },
-          { title: "Integer Operation Exercises", duration: 90, type: "practical" },
-          { title: "Practical 01: Lighting Logic using Arithmetic Instructions", duration: 120, type: "practical" },
-          { title: "Introduction to HMI Interfaces", duration: 60, type: "theory" },
-          { title: "Overview of OP320A Panels", duration: 75, type: "theory" },
-          { title: "OP320A Hands-on Practicals", duration: 120, type: "practical" }
+        "dayNumber": 10,
+        "dayTitle": "Arrays & Communication Systems",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Advanced Array Manipulation",
+            "duration": 90,
+            "type": "practical",
+            "description": "Array sorting, searching, and complex data handling"
+          },
+          {
+            "title": "Array-Based Home Automation",
+            "duration": 120,
+            "type": "project",
+            "description": "Complete home automation system using array data structures"
+          },
+          {
+            "title": "Advanced Serial Communication",
+            "duration": 60,
+            "type": "theory",
+            "description": "Serial protocol deep dive, baud rates, and data framing"
+          },
+          {
+            "title": "ASCII Code System",
+            "duration": 45,
+            "type": "theory",
+            "description": "Character encoding, ASCII table, and data representation"
+          },
+          {
+            "title": "DTMF Based Control System",
+            "duration": 90,
+            "type": "project",
+            "description": "Converting serial system to DTMF based remote control"
+          },
+          {
+            "title": "Elevator Project - Flowchart Implementation",
+            "duration": 120,
+            "type": "project",
+            "description": "Multi-floor elevator system with advanced control logic"
+          }
         ]
       },
       {
-        dayNumber: 11,
-        dayTitle: "Floating Point & Subroutines",
-        items: [
-          { title: "Basics of Floating-Point Operations", duration: 75, type: "theory" },
-          { title: "Floating-Point Programming Examples", duration: 90, type: "practical" },
-          { title: "Introduction to Subroutines", duration: 60, type: "theory" },
-          { title: "Subroutine-based Exercises", duration: 90, type: "practical" },
-          { title: "Elevator Control Project (Using MOVE Instructions)", duration: 180, type: "project" }
+        "dayNumber": 11,
+        "dayTitle": "Functions, Interrupts & Autonomous Robots",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Advanced Array Applications",
+            "duration": 60,
+            "type": "practical",
+            "description": "Multi-dimensional data handling and complex array operations"
+          },
+          {
+            "title": "Functions in C Programming",
+            "duration": 90,
+            "type": "theory",
+            "description": "Function declaration, definition, parameters, and return types"
+          },
+          {
+            "title": "Function Types (1/2/3/4)",
+            "duration": 60,
+            "type": "theory",
+            "description": "Different function categories based on parameters and returns"
+          },
+          {
+            "title": "Variable Scope (Local/Global)",
+            "duration": 45,
+            "type": "theory",
+            "description": "Variable visibility, lifetime, and scope management"
+          },
+          {
+            "title": "External Interrupts Theory",
+            "duration": 60,
+            "type": "theory",
+            "description": "Interrupt concepts, ISR, priority, and real-time response"
+          },
+          {
+            "title": "Interrupt Service Routine Practical",
+            "duration": 45,
+            "type": "practical",
+            "description": "Implementing and testing external interrupt handlers"
+          },
+          {
+            "title": "Ultrasonic Sensor Theory",
+            "duration": 45,
+            "type": "theory",
+            "description": "Ultrasonic ranging, time-of-flight, and distance calculation"
+          },
+          {
+            "title": "Object Detection Practical",
+            "duration": 45,
+            "type": "practical",
+            "description": "Distance measurement and object detection using ultrasonics"
+          },
+          {
+            "title": "Object Detection Robot",
+            "duration": 60,
+            "type": "project",
+            "description": "Robot that detects and responds to objects in path"
+          },
+          {
+            "title": "Obstacle Avoiding Robot",
+            "duration": 90,
+            "type": "project",
+            "description": "Complete autonomous robot with obstacle avoidance"
+          }
         ]
       },
       {
-        dayNumber: 12,
-        dayTitle: "Special Memory & Motor Control",
-        items: [
-          { title: "Special Memory Area (SM Area) Overview", duration: 75, type: "theory" },
-          { title: "Understanding SMB0", duration: 60, type: "theory" },
-          { title: "Introduction to PWM", duration: 75, type: "theory" },
-          { title: "Practical 01: Speed Control of a DC Motor using PWM", duration: 120, type: "practical" },
-          { title: "Practical 02: Observing PWM Waveforms", duration: 90, type: "practical" },
-          { title: "Introduction to Pulse Train Output (PTO)", duration: 75, type: "theory" },
-          { title: "Practical 03: Stepper Motor Direction & Step Control", duration: 120, type: "practical" },
-          { title: "Introduction to AC Servo Motors", duration: 60, type: "theory" },
-          { title: "Practical 04: AC Servo Position Control", duration: 120, type: "practical" },
-          { title: "Software-based Servo Control Demo", duration: 60, type: "demo" },
-          { title: "Demo: Linear Guide with AC Servo", duration: 90, type: "demo" }
+        "dayNumber": 12,
+        "dayTitle": "Control Systems & Line Following Robots",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Encoder Systems Theory",
+            "duration": 60,
+            "type": "theory",
+            "description": "Rotary encoders, quadrature encoding, and position feedback"
+          },
+          {
+            "title": "Control Systems Fundamentals",
+            "duration": 90,
+            "type": "theory",
+            "description": "Open-loop vs closed-loop control, feedback, and system response"
+          },
+          {
+            "title": "PID Controller Theory",
+            "duration": 120,
+            "type": "theory",
+            "description": "Proportional, Integral, Derivative control and tuning methods"
+          },
+          {
+            "title": "P-Controller Implementation",
+            "duration": 30,
+            "type": "theory",
+            "description": "Proportional control characteristics and applications"
+          },
+          {
+            "title": "PI-Controller Implementation",
+            "duration": 30,
+            "type": "theory",
+            "description": "Proportional-Integral control for steady-state accuracy"
+          },
+          {
+            "title": "PD-Controller Implementation",
+            "duration": 30,
+            "type": "theory",
+            "description": "Proportional-Derivative control for improved response"
+          },
+          {
+            "title": "PID-Controller Implementation",
+            "duration": 30,
+            "type": "theory",
+            "description": "Complete PID control for optimal system performance"
+          },
+          {
+            "title": "TCRT5000 Sensor Theory",
+            "duration": 45,
+            "type": "theory",
+            "description": "Reflective optical sensor working and line detection principles"
+          },
+          {
+            "title": "Transistor Switching Theory",
+            "duration": 30,
+            "type": "theory",
+            "description": "Transistor as switch, saturation, cutoff regions"
+          },
+          {
+            "title": "Phototransistor Characteristics",
+            "duration": 30,
+            "type": "theory",
+            "description": "Light-sensitive transistors and their applications"
+          },
+          {
+            "title": "TCRT5000 Interface Practical",
+            "duration": 45,
+            "type": "practical",
+            "description": "Wiring and calibrating TCRT5000 for line detection"
+          },
+          {
+            "title": "Line Following Robot - Basic Logic",
+            "duration": 60,
+            "type": "project",
+            "description": "Simple line following using if-else conditional logic"
+          },
+          {
+            "title": "Line Following Robot - Proportional Control",
+            "duration": 60,
+            "type": "project",
+            "description": "Implementing P-control for smoother line following"
+          },
+          {
+            "title": "Line Following Robot - PID Control",
+            "duration": 90,
+            "type": "project",
+            "description": "Advanced line following with complete PID implementation"
+          }
         ]
       },
       {
-        dayNumber: 13,
-        dayTitle: "Interrupts, Encoders & Mitsubishi PLC",
-        items: [
-          { title: "Understanding Interrupt Concepts", duration: 75, type: "theory" },
-          { title: "External Interrupts", duration: 60, type: "theory" },
-          { title: "Detecting Pulses on Inputs", duration: 75, type: "theory" },
-          { title: "Introduction to Rotary Encoders", duration: 60, type: "theory" },
-          { title: "Writing an RPM Calculation Program", duration: 90, type: "practical" },
-          { title: "Understanding High-Speed Counters (HSC)", duration: 75, type: "theory" },
-          { title: "HSC Configuration and Modes", duration: 90, type: "theory" },
-          { title: "HSC Simulations", duration: 60, type: "practical" },
-          { title: "Practical 01: Observing Encoder Pulse Output", duration: 90, type: "practical" },
-          { title: "Practical 02: Understanding A/B Phase Difference", duration: 90, type: "practical" },
-          { title: "Practical 03: Normal Counter vs. HSC Demonstration", duration: 60, type: "practical" },
-          { title: "Introduction to Mitsubishi FX Series PLC", duration: 75, type: "theory" },
-          { title: "Simulation of Bit Logic / Timers / Counters", duration: 90, type: "practical" },
-          { title: "Water Treatment Project on Mitsubishi PLC", duration: 150, type: "project" }
+        "dayNumber": 13,
+        "dayTitle": "Advanced Programming & PCB Design",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "2D Arrays Theory",
+            "duration": 60,
+            "type": "theory",
+            "description": "Multi-dimensional arrays, matrix operations, and applications"
+          },
+          {
+            "title": "2D Array Practical Examples",
+            "duration": 60,
+            "type": "practical",
+            "description": "Working with matrices and grid-based data structures"
+          },
+          {
+            "title": "For Loop Structures",
+            "duration": 60,
+            "type": "theory",
+            "description": "For loop syntax, initialization, condition, and increment"
+          },
+          {
+            "title": "2D Arrays with For Loops",
+            "duration": 90,
+            "type": "practical",
+            "description": "Nested loops for 2D array manipulation and processing"
+          },
+          {
+            "title": "PCB Design Introduction",
+            "duration": 90,
+            "type": "theory",
+            "description": "Printed Circuit Board fundamentals and design process"
+          },
+          {
+            "title": "SMD vs Through-Hole Components",
+            "duration": 45,
+            "type": "theory",
+            "description": "Component packaging, advantages, and selection criteria"
+          },
+          {
+            "title": "Schematic Design Principles",
+            "duration": 60,
+            "type": "practical",
+            "description": "Creating circuit schematics and symbol libraries"
+          },
+          {
+            "title": "Board Layout Design",
+            "duration": 60,
+            "type": "practical",
+            "description": "PCB layout, component placement, and routing techniques"
+          },
+          {
+            "title": "Footprint Management",
+            "duration": 45,
+            "type": "practical",
+            "description": "Component footprints, library creation, and management"
+          },
+          {
+            "title": "Net Classes & Design Rules",
+            "duration": 45,
+            "type": "theory",
+            "description": "Design rule checking, net classes, and manufacturing preparation"
+          }
         ]
       },
       {
-        dayNumber: 14,
-        dayTitle: "Data Types, Strings & Serial Communication",
-        items: [
-          { title: "PLC Data Types Overview", duration: 75, type: "theory" },
-          { title: "Understanding Character and String Data", duration: 60, type: "theory" },
-          { title: "String Manipulation Examples", duration: 90, type: "practical" },
-          { title: "Introduction to Digital Communication", duration: 60, type: "theory" },
-          { title: "Serial vs. Parallel Communication", duration: 75, type: "theory" },
-          { title: "Serial Protocol Fundamentals", duration: 60, type: "theory" },
-          { title: "Introduction to RS-232", duration: 75, type: "theory" },
-          { title: "PLC → PC Data Transmission", duration: 90, type: "practical" },
-          { title: "PC → PLC Data Reception", duration: 90, type: "practical" },
-          { title: "Device Control Using Serial Commands", duration: 120, type: "practical" },
-          { title: "Basics of Automation Software Design", duration: 60, type: "theory" },
-          { title: "Introduction to Visual Basic", duration: 75, type: "theory" },
-          { title: "Working with Buttons, Text Fields, Checkboxes, etc.", duration: 90, type: "practical" },
-          { title: "Designing a Simple VB Interface & EXE Generation", duration: 120, type: "practical" },
-          { title: "Basic VB Coding - Variables", duration: 60, type: "theory" },
-          { title: "Basic VB Coding - IF / IF-ELSE", duration: 75, type: "theory" },
-          { title: "Basic VB Coding - AND / OR Logic", duration: 60, type: "theory" },
-          { title: "Develop a VB Program to Find Maximum Value", duration: 90, type: "practical" },
-          { title: "Build a VB Interface and Communicate with PLC (RS-232)", duration: 150, type: "project" }
+        "dayNumber": 14,
+        "dayTitle": "IoT Systems & Web Integration",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "Web Design Fundamentals",
+            "duration": 90,
+            "type": "theory",
+            "description": "HTML structure, CSS styling, and web development basics"
+          },
+          {
+            "title": "ESP32 Web Client Theory",
+            "duration": 60,
+            "type": "theory",
+            "description": "ESP32 WiFi capabilities, web client/server functionality"
+          },
+          {
+            "title": "Web Template Design Practical",
+            "duration": 90,
+            "type": "practical",
+            "description": "Creating responsive web interfaces for IoT applications"
+          },
+          {
+            "title": "Website Deployment Process",
+            "duration": 60,
+            "type": "theory",
+            "description": "Domain registration, web servers, and DNS configuration"
+          },
+          {
+            "title": "ASP.NET Introduction",
+            "duration": 60,
+            "type": "theory",
+            "description": "Web application framework for dynamic content generation"
+          },
+          {
+            "title": "Home Automation System Design",
+            "duration": 90,
+            "type": "project",
+            "description": "Designing complete web-controlled home automation"
+          },
+          {
+            "title": "HTTP Request Handling",
+            "duration": 60,
+            "type": "practical",
+            "description": "Processing HTTP requests and responses in embedded systems"
+          },
+          {
+            "title": "Web-Based Home Automation",
+            "duration": 120,
+            "type": "project",
+            "description": "Complete IoT home automation with web interface"
+          }
         ]
       },
       {
-        dayNumber: 15,
-        dayTitle: "Siemens S7-300 / S7-400 Control Systems",
-        items: [
-          { title: "Overview of S7-300 / S7-400 PLCs", duration: 75, type: "theory" },
-          { title: "Creating a Project & Hardware Setup", duration: 90, type: "practical" },
-          { title: "Bit Logic Examples and Simulations", duration: 90, type: "practical" },
-          { title: "Timers / Counters in Step7", duration: 75, type: "theory" },
-          { title: "Compare Instruction Examples", duration: 90, type: "practical" },
-          { title: "MOVE Instruction Examples", duration: 90, type: "practical" },
-          { title: "Practical 01: S7-300 Wiring & Program Download", duration: 120, type: "practical" },
-          { title: "Practical 02: S7-400 Wiring & Program Download", duration: 120, type: "practical" },
-          { title: "Introduction to Remote IO Systems", duration: 75, type: "theory" },
-          { title: "Practical 03: Wiring ET200S / ET200M Remote IO", duration: 120, type: "practical" },
-          { title: "Project: Water Treatment Automation using Remote IO", duration: 180, type: "project" }
-        ]
-      },
-      {
-        dayNumber: 16,
-        dayTitle: "WINCC & SCADA Development",
-        items: [
-          { title: "Introduction to SCADA Systems", duration: 75, type: "theory" },
-          { title: "Siemens Touch Panel Overview", duration: 60, type: "theory" },
-          { title: "Creating a WINCC Project", duration: 90, type: "practical" },
-          { title: "Tag Creation & Linking with Step7", duration: 90, type: "practical" },
-          { title: "Button / Toggle / Control Elements", duration: 75, type: "practical" },
-          { title: "Real-time Simulation with PLC", duration: 90, type: "practical" },
-          { title: "Working with Bargraphs, DateTime, Circular Objects, etc.", duration: 90, type: "practical" },
-          { title: "Enhanced Visual Elements", duration: 60, type: "theory" },
-          { title: "Project: Complete SCADA Design for Water Treatment System", duration: 240, type: "project" }
-        ]
-      },
-      {
-        dayNumber: 17,
-        dayTitle: "Shift Registers & Analog Processing",
-        items: [
-          { title: "Introduction to Shift / Rotate Instructions", duration: 75, type: "theory" },
-          { title: "Practical 01: Design a Light Pattern using Shift Commands", duration: 120, type: "practical" },
-          { title: "Introduction to Analog to Digital Conversion", duration: 60, type: "theory" },
-          { title: "S7-200 ADC Overview", duration: 75, type: "theory" },
-          { title: "Practical 02: Water Tank Level Monitoring", duration: 120, type: "practical" },
-          { title: "S7-300/400 ADC Overview", duration: 75, type: "theory" },
-          { title: "Practical 03: Interfacing PT100 / Thermocouples", duration: 120, type: "practical" },
-          { title: "Introduction to DAC (Digital to Analog)", duration: 60, type: "theory" },
-          { title: "Practical 04: Speed Control of Induction Motor using Analog Output", duration: 150, type: "practical" }
-        ]
-      },
-      {
-        dayNumber: 18,
-        dayTitle: "Control Systems & PID",
-        items: [
-          { title: "Why Modern Systems Need Control", duration: 45, type: "theory" },
-          { title: "Advantages of Automation Control", duration: 45, type: "theory" },
-          { title: "Types of Control Systems", duration: 60, type: "theory" },
-          { title: "PID Controller Theory", duration: 75, type: "theory" },
-          { title: "P Control", duration: 60, type: "theory" },
-          { title: "PI Control", duration: 60, type: "theory" },
-          { title: "PD Control", duration: 60, type: "theory" },
-          { title: "Complete PID Control", duration: 75, type: "theory" }
-        ]
-      },
-      {
-        dayNumber: 19,
-        dayTitle: "Web Design & IoT in Automation",
-        items: [
-          { title: "Introduction to Web Development for Automation", duration: 75, type: "theory" },
-          { title: "Industry 4.0 Concepts", duration: 60, type: "theory" },
-          { title: "IoT in Industrial Automation", duration: 75, type: "theory" },
-          { title: "Fundamentals of HTML & CSS", duration: 90, type: "theory" },
-          { title: "Create Simple Web Templates", duration: 120, type: "practical" },
-          { title: "Hosting and Domain Concepts - Domain Registration", duration: 45, type: "theory" },
-          { title: "Hosting and Domain Concepts - Server Selection", duration: 45, type: "theory" },
-          { title: "Hosting and Domain Concepts - DNS Configuration", duration: 45, type: "theory" },
-          { title: "Introduction to ASP.NET", duration: 75, type: "theory" },
-          { title: "Designing a Home Automation Web Interface", duration: 120, type: "practical" },
-          { title: "Accessing Devices via HTTP Requests", duration: 90, type: "practical" },
-          { title: "Project: Complete IoT-based Home Automation System", duration: 240, type: "project" }
+        "dayNumber": 15,
+        "dayTitle": "Advanced Protocols & Final Integration",
+        "totalDuration": 480,
+        "items": [
+          {
+            "title": "C Programming Comprehensive Revision",
+            "duration": 90,
+            "type": "theory",
+            "description": "Complete C language review and best practices"
+          },
+          {
+            "title": "I2C Protocol Theory",
+            "duration": 90,
+            "type": "theory",
+            "description": "I2C bus architecture, addressing, and communication protocol"
+          },
+          {
+            "title": "Master-Slave Communication",
+            "duration": 45,
+            "type": "theory",
+            "description": "I2C multi-device communication and bus arbitration"
+          },
+          {
+            "title": "Common I2C Devices",
+            "duration": 45,
+            "type": "demo",
+            "description": "Overview of I2C sensors, RTC, EEPROM, and other peripherals"
+          },
+          {
+            "title": "DS1307 RTC Module",
+            "duration": 60,
+            "type": "theory",
+            "description": "Real-time clock operation, registers, and timekeeping"
+          },
+          {
+            "title": "I2C Communication with RTC",
+            "duration": 60,
+            "type": "practical",
+            "description": "Implementing I2C protocol for RTC communication"
+          },
+          {
+            "title": "RTC Library Programming",
+            "duration": 60,
+            "type": "practical",
+            "description": "Using and customizing RTC libraries for time applications"
+          },
+          {
+            "title": "Modbus RTU 485 Protocol Theory",
+            "duration": 90,
+            "type": "theory",
+            "description": "Industrial Modbus protocol, RS-485 physical layer, addressing"
+          },
+          {
+            "title": "Modbus RTU Practical Implementation",
+            "duration": 90,
+            "type": "practical",
+            "description": "Configuring Modbus communication between devices"
+          },
+          {
+            "title": "VFD Control via Modbus RTU",
+            "duration": 120,
+            "type": "project",
+            "description": "Controlling Variable Frequency Drives using Modbus protocol"
+          },
+          {
+            "title": "Arduino Modbus Integration",
+            "duration": 90,
+            "type": "practical",
+            "description": "Implementing Modbus RTU master/slave on Arduino platforms"
+          },
+          {
+            "title": "Proteus Simulation Workshop",
+            "duration": 60,
+            "type": "workshop",
+            "description": "Circuit simulation and virtual prototyping techniques"
+          },
+          {
+            "title": "Railway Simulation System",
+            "duration": 120,
+            "type": "project",
+            "description": "Complete railway control system simulation with multiple protocols"
+          },
+          {
+            "title": "Course Project Integration",
+            "duration": 120,
+            "type": "project",
+            "description": "Final comprehensive project integrating all course concepts"
+          }
         ]
       }
     ];
